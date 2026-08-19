@@ -11,14 +11,17 @@ shows up in the dashboard as a gap in your documentation.
 
 | Phase | State |
 | --- | --- |
-| Bootstrap, accounts, bots | ✅ done |
-| Knowledge sources and indexing | — |
-| Retrieval | — |
-| Chat | — |
-| Widget | — |
-| Conversations, gaps, leads | — |
-| Billing | — |
-| Landing page | — |
+| 0. Bootstrap | ✅ done |
+| 1. Accounts and bots | ✅ done |
+| 2. Knowledge sources and indexing | — |
+| 3. Retrieval | — |
+| 4. Chat | — |
+| 5. Widget | — |
+| 6. Conversations, gaps, leads | — |
+| 7. Billing | — |
+| 8. Answer quality | — |
+| 9. Landing page | — |
+| 10. Polish | — |
 
 ## Stack
 
