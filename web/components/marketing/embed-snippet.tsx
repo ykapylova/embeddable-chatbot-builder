@@ -15,7 +15,7 @@ export function EmbedSnippet() {
   }
 
   return (
-    <section className="px-6 py-20">
+    <section className="px-6 py-14">
       <div className="mx-auto max-w-2xl text-center">
         <h2 className="text-2xl font-semibold sm:text-3xl">One script tag. That&apos;s the integration.</h2>
         <p className="mx-auto mt-3 max-w-lg text-[var(--muted)]">
@@ -23,7 +23,7 @@ export function EmbedSnippet() {
           step, no SDK, nothing to install.
         </p>
 
-        <div className="mt-8 flex items-center justify-between gap-3 rounded-lg border border-[var(--border)] bg-[#0d1117] px-5 py-4 text-left">
+        <div className="glow-ring mt-8 flex items-center justify-between gap-3 rounded-lg border border-[var(--border)] bg-[#0d1117] px-5 py-4 text-left shadow-xl">
           <code className="overflow-x-auto whitespace-pre font-mono text-sm text-[#c9d1d9]">
             {SNIPPET}
           </code>

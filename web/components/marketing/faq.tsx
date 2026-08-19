@@ -35,16 +35,16 @@ const items = [
 
 export function Faq() {
   return (
-    <section id="faq" className="px-6 py-20">
+    <section id="faq" className="px-6 py-14">
       <div className="mx-auto max-w-2xl">
         <h2 className="text-center text-2xl font-semibold sm:text-3xl">Frequently asked</h2>
 
         <div className="mt-8 divide-y divide-[var(--border)] rounded-xl border border-[var(--border)] bg-[var(--panel)]">
           {items.map((item) => (
-            <details key={item.question} className="group px-5 py-4">
+            <details key={item.question} className="group px-5 py-4 transition hover:bg-[var(--brand-soft)]">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-medium">
                 {item.question}
-                <Plus className="h-4 w-4 shrink-0 text-[var(--muted)] transition group-open:rotate-45" />
+                <Plus className="h-4 w-4 shrink-0 text-[var(--brand-1)] transition group-open:rotate-45" />
               </summary>
               <p className="mt-2 text-sm text-[var(--muted)]">{item.answer}</p>
             </details>

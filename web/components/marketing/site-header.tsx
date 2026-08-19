@@ -31,7 +31,13 @@ export async function SiteHeader() {
         <div className="flex items-center gap-3">
           {userId ? (
             <Link href="/dashboard">
-              <Button size="sm">Go to dashboard</Button>
+              <Button
+                size="sm"
+                className="border-0"
+                style={{ background: "linear-gradient(100deg, var(--brand-1), var(--brand-2))" }}
+              >
+                Go to dashboard
+              </Button>
             </Link>
           ) : (
             <>
@@ -42,7 +48,13 @@ export async function SiteHeader() {
                 Sign in
               </Link>
               <Link href="/sign-up">
-                <Button size="sm">Build your bot free</Button>
+                <Button
+                  size="sm"
+                  className="border-0"
+                  style={{ background: "linear-gradient(100deg, var(--brand-1), var(--brand-2))" }}
+                >
+                  Build your bot free
+                </Button>
               </Link>
             </>
           )}

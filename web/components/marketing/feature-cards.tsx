@@ -6,39 +6,51 @@ const features = [
     title: "Source citations",
     description:
       "Every answer links back to the paragraph it came from, so customers can verify it and keep reading.",
+    chipBg: "var(--chip-violet-bg)",
+    chipFg: "var(--chip-violet-fg)",
   },
   {
     icon: ListChecks,
     title: "Content gaps",
     description:
       "Questions the bot couldn't answer land in one dashboard — a documentation to-do list, ranked by frequency.",
+    chipBg: "var(--chip-teal-bg)",
+    chipFg: "var(--chip-teal-fg)",
   },
   {
     icon: UserPlus,
     title: "Lead capture",
     description:
       "When the bot doesn't know, it offers to take a name and email instead of losing the visitor.",
+    chipBg: "var(--chip-amber-bg)",
+    chipFg: "var(--chip-amber-fg)",
   },
   {
     icon: Palette,
     title: "Customisation",
     description: "Match your brand: colours, avatar, and the first message the widget opens with.",
+    chipBg: "var(--chip-rose-bg)",
+    chipFg: "var(--chip-rose-fg)",
   },
   {
     icon: Globe,
     title: "Domain allowlist",
     description: "The widget only answers on domains you approve — no one can embed your bot elsewhere.",
+    chipBg: "var(--chip-violet-bg)",
+    chipFg: "var(--chip-violet-fg)",
   },
   {
     icon: BarChart3,
     title: "Analytics",
     description: "Volume, deflection rate, and the exact questions your customers are asking, by day.",
+    chipBg: "var(--chip-teal-bg)",
+    chipFg: "var(--chip-teal-fg)",
   },
 ];
 
 export function FeatureCards() {
   return (
-    <section className="px-6 py-20">
+    <section className="px-6 py-14">
       <div className="mx-auto max-w-5xl">
         <h2 className="text-center text-2xl font-semibold sm:text-3xl">
           More than a bot builder
@@ -52,9 +64,14 @@ export function FeatureCards() {
           {features.map((feature) => (
             <div
               key={feature.title}
-              className="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-6"
+              className="group rounded-xl border border-[var(--border)] bg-[var(--panel)] p-6 transition duration-200 hover:-translate-y-1 hover:border-transparent hover:shadow-[0_20px_45px_-15px_var(--brand-ring)]"
             >
-              <feature.icon className="h-5 w-5 text-[var(--muted)]" />
+              <span
+                className="inline-flex h-10 w-10 items-center justify-center rounded-lg transition group-hover:scale-110"
+                style={{ background: feature.chipBg, color: feature.chipFg }}
+              >
+                <feature.icon className="h-5 w-5" />
+              </span>
               <h3 className="mt-4 font-medium">{feature.title}</h3>
               <p className="mt-1.5 text-sm text-[var(--muted)]">{feature.description}</p>
             </div>
