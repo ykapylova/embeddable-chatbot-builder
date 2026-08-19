@@ -28,3 +28,14 @@ coverage/
 .idea/
 .vscode/
 
+
+# Agent worktrees (transient)
+.claude/worktrees/
+
+# Working artifacts, not part of the product.
+# The repository holds the app; planning and process docs stay local.
+*.md
+!README.md
+tasks/
+.claude/
+.github/pull_request_template.md
