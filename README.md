@@ -12,8 +12,8 @@ as a widget you embed on your own site.
 
 | Phase | State |
 | --- | --- |
-| 0. Bootstrap | — |
-| 1. Accounts and bots | — |
+| 0. Bootstrap | ✅ done |
+| 1. Accounts and bots | ✅ done |
 | 2. Knowledge sources and indexing | — |
 | 3. Retrieval | — |
 | 4. Chat | — |

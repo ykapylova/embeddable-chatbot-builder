@@ -1,0 +1,35 @@
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+
+/**
+ * Public surface of the product:
+ * - marketing (`/`, `/pricing`) is readable signed out;
+ * - `/embed/*` and `/api/public/*` serve the widget on customer sites, where auth
+ *   is the bot public key plus an Origin check, not a Clerk session;
+ * - `/api/billing/webhook` comes from Stripe and verifies its own signature;
+ * - `/api/plans` is the public pricing catalogue used by the landing page.
+ */
+const isPublicRoute = createRouteMatcher([
+  "/",
+  "/pricing",
+  "/sign-in(.*)",
+  "/sign-up(.*)",
+  "/embed(.*)",
+  "/api/public(.*)",
+  "/api/plans",
+  "/api/billing/webhook",
+]);
+
+export default clerkMiddleware(async (auth, request) => {
+  if (isPublicRoute(request)) {
+    return;
+  }
+
+  await auth.protect();
+});
+
+export const config = {
+  matcher: [
+    "/((?!_next|widget.js|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    "/(api|trpc)(.*)",
+  ],
+};
