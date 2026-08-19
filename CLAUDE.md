@@ -167,7 +167,37 @@ reads as unfinished. (Chat replies to Yana stay in Russian; that is conversation
 
 Before every commit, confirm the staged file list has no `.env*` beyond `.env.example`.
 
-## 11. Reporting back
+## 11. Parallel tracks
+
+Some phases are independent and can run as separate agents at the same time. The main session is the
+hub: it briefs the tracks, integrates them, resolves conflicts and reports to Yana. Tracks never talk
+to each other.
+
+**Every parallel track runs in its own git worktree** (`isolation: "worktree"`), on its own branch,
+and opens its own PR. No two tracks share a working tree.
+
+**Territory is assigned, not negotiated.** A track edits only files inside its territory. Anything
+shared is the hub's to change:
+
+| Shared file | Owner |
+| --- | --- |
+| `web/server/db/schema.ts` and `web/drizzle/**` | hub only — one migration author at a time |
+| `README.md` status table | hub |
+| `web/.env.example` | hub (tracks report new variables in the PR body instead) |
+| `web/package.json` | hub (tracks list needed dependencies in the PR body) |
+| `CLAUDE.md`, `PROJECT_SPEC.md`, `DEV_PLAN.md` | hub |
+
+If a track needs something outside its territory, it says so in its PR and does not reach for it.
+Two agents editing one file produces conflicts that cost more than the parallelism saved.
+
+**Briefing a track** must include: which phase from `DEV_PLAN.md`, its territory, its branch name,
+the blockers it will hit, and an instruction to read `CLAUDE.md` and `PROJECT_SPEC.md` first. A cold
+agent that guesses the conventions writes code that has to be rewritten.
+
+**Fan-out width follows the reviewer, not the machine.** Yana reviews every PR alone. Three parallel
+PRs mean three simultaneous reviews. Do not open more tracks than she has said she can absorb.
+
+## 12. Reporting back
 
 The chat reply after a PR is short and factual:
 - PR link;
