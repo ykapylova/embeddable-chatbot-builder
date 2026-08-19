@@ -1,43 +1,29 @@
-import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 
-import { Button } from "components/ui/button";
+import { PLAN_CATALOGUE } from "lib/plans";
+import { EmbedSnippet } from "components/marketing/embed-snippet";
+import { Faq } from "components/marketing/faq";
+import { FeatureCards } from "components/marketing/feature-cards";
+import { FinalCta } from "components/marketing/final-cta";
+import { Hero } from "components/marketing/hero";
+import { HowItWorks } from "components/marketing/how-it-works";
+import { LiveDemoPlaceholder } from "components/marketing/live-demo-placeholder";
+import { PricingSection } from "components/marketing/pricing-section";
 
-// The real landing page is phase 9. This is the minimum needed to reach the app.
 export default async function MarketingPage() {
   const { userId } = await auth();
+  const signedIn = Boolean(userId);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center gap-6 px-6 text-center">
-      <p className="text-sm font-medium tracking-wide text-[var(--muted)] uppercase">
-        Embeddable Chatbot Builder
-      </p>
-      <h1 className="text-4xl font-semibold text-balance sm:text-5xl">
-        Turn your docs into a support agent that never sleeps
-      </h1>
-      <p className="max-w-xl text-lg text-[var(--muted)]">
-        Upload your documentation, get a chatbot that answers with citations — in your app and
-        as a widget on your site.
-      </p>
-
-      <div className="flex items-center gap-3">
-        {userId ? (
-          <Link href="/dashboard">
-            <Button size="lg">Go to dashboard</Button>
-          </Link>
-        ) : (
-          <>
-            <Link href="/sign-up">
-              <Button size="lg">Build your bot free</Button>
-            </Link>
-            <Link href="/sign-in">
-              <Button size="lg" variant="outline">
-                Sign in
-              </Button>
-            </Link>
-          </>
-        )}
-      </div>
-    </main>
+    <>
+      <Hero signedIn={signedIn} />
+      <LiveDemoPlaceholder />
+      <HowItWorks />
+      <FeatureCards />
+      <EmbedSnippet />
+      <PricingSection plans={PLAN_CATALOGUE} signedIn={signedIn} />
+      <Faq />
+      <FinalCta signedIn={signedIn} />
+    </>
   );
 }
