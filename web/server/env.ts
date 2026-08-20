@@ -18,6 +18,17 @@ const envSchema = z.object({
   // AnswerProvider implementation. The stub exists for tests and CI, which run
   // end-to-end without an OpenAI key. See DEV_PLAN.md §1.
   ANSWER_PROVIDER: z.enum(["openai", "stub"]).optional(),
+
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  STRIPE_PRICE_PRO_MONTHLY: z.string().optional(),
+  STRIPE_PRICE_PRO_YEARLY: z.string().optional(),
+  STRIPE_PRICE_BUSINESS_MONTHLY: z.string().optional(),
+  STRIPE_PRICE_BUSINESS_YEARLY: z.string().optional(),
+
+  // Authorises the daily grace-expiry sweep (Vercel Cron sends this as a
+  // Bearer token automatically once configured) — PROJECT_SPEC.md §10.8 #10.
+  CRON_SECRET: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -61,6 +72,20 @@ export const env = {
   appUrl: trimOrUndefined(p.NEXT_PUBLIC_APP_URL) ?? "http://localhost:3000",
 
   answerProvider: p.ANSWER_PROVIDER ?? "openai",
+
+  stripeSecretKey: trimOrUndefined(p.STRIPE_SECRET_KEY),
+  stripeWebhookSecret: trimOrUndefined(p.STRIPE_WEBHOOK_SECRET),
+  stripePriceIds: {
+    pro: {
+      month: trimOrUndefined(p.STRIPE_PRICE_PRO_MONTHLY),
+      year: trimOrUndefined(p.STRIPE_PRICE_PRO_YEARLY),
+    },
+    business: {
+      month: trimOrUndefined(p.STRIPE_PRICE_BUSINESS_MONTHLY),
+      year: trimOrUndefined(p.STRIPE_PRICE_BUSINESS_YEARLY),
+    },
+  },
+  cronSecret: trimOrUndefined(p.CRON_SECRET),
 } as const;
 
 export type Env = typeof env;
