@@ -9,8 +9,10 @@ export function BotNav({ botId }: { botId: string }) {
   const pathname = usePathname();
 
   const tabs = [
-    { href: `/bots/${botId}`, label: "Playground" },
+    // Exact match only: every other tab's href is also a prefix of this one.
+    { href: `/bots/${botId}`, label: "Playground", exact: true },
     { href: `/bots/${botId}/knowledge`, label: "Knowledge" },
+    { href: `/bots/${botId}/conversations`, label: "Conversations" },
     { href: `/bots/${botId}/appearance`, label: "Appearance" },
     { href: `/bots/${botId}/install`, label: "Install" },
     { href: `/bots/${botId}/settings`, label: "Settings" },
@@ -19,7 +21,9 @@ export function BotNav({ botId }: { botId: string }) {
   return (
     <nav className="flex gap-1 overflow-x-auto border-b border-[var(--border)]">
       {tabs.map((tab) => {
-        const isActive = pathname === tab.href;
+        const isActive = tab.exact
+          ? pathname === tab.href
+          : pathname === tab.href || pathname.startsWith(`${tab.href}/`);
         return (
           <Link
             key={tab.href}
