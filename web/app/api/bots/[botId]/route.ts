@@ -14,12 +14,21 @@ export async function GET(_request: Request, context: RouteContext): Promise<Nex
   if (unwrapAccount(result)) return result;
 
   const { botId } = await context.params;
-  const bot = await botService.get(botId, result.account.id);
-  // Someone else's bot and a missing bot answer identically: the response must
-  // not reveal that another account's resource exists.
-  if (!bot) return jsonErr("Bot not found", 404);
 
-  return jsonOk(bot);
+  try {
+    const bot = await botService.get(botId, result.account.id);
+    // Someone else's bot, a missing bot and a malformed id all answer
+    // identically: the response must not reveal that another account's
+    // resource exists, or that the id even looks like one.
+    if (!bot) return jsonErr("Bot not found", 404);
+    return jsonOk(bot);
+  } catch (error) {
+    // A non-UUID `botId` fails the column cast at the database rather than
+    // returning an empty result, so it needs its own catch here — unlike a
+    // Zod failure on a request body, there is no user input shape to blame.
+    console.error("[GET /api/bots/:botId]", error);
+    return jsonErr("Bot not found", 404);
+  }
 }
 
 export async function PATCH(request: Request, context: RouteContext): Promise<NextResponse> {
@@ -36,7 +45,7 @@ export async function PATCH(request: Request, context: RouteContext): Promise<Ne
   }
 
   try {
-    const bot = await botService.update(botId, result.account.id, body);
+    const bot = await botService.update(botId, result.account.id, body, result.account.plan);
     if (!bot) return jsonErr("Bot not found", 404);
     return jsonOk(bot);
   } catch (error) {
@@ -53,8 +62,14 @@ export async function DELETE(_request: Request, context: RouteContext): Promise<
   if (unwrapAccount(result)) return result;
 
   const { botId } = await context.params;
-  const removed = await botService.remove(botId, result.account.id);
-  if (!removed) return jsonErr("Bot not found", 404);
+
+  try {
+    const removed = await botService.remove(botId, result.account.id);
+    if (!removed) return jsonErr("Bot not found", 404);
+  } catch (error) {
+    console.error("[DELETE /api/bots/:botId]", error);
+    return jsonErr("Bot not found", 404);
+  }
 
   return jsonAck();
 }

@@ -1,3 +1,10 @@
+export type BotTheme = {
+  accentColor?: string;
+  avatarUrl?: string | null;
+  placeholder?: string;
+  position?: "bottom-right" | "bottom-left";
+};
+
 export type Bot = {
   id: string;
   name: string;
@@ -6,6 +13,7 @@ export type Bot = {
   welcomeMessage: string;
   fallbackMessage: string;
   tone: string;
+  theme: BotTheme;
   allowedDomains: string[];
   brandingEnabled: boolean;
   leadCaptureEnabled: boolean;
@@ -28,4 +36,7 @@ export type UpdateBotBody = {
   welcomeMessage?: string;
   fallbackMessage?: string;
   tone?: string;
+  theme?: BotTheme;
+  allowedDomains?: string[];
+  brandingEnabled?: boolean;
 };
