@@ -43,15 +43,15 @@ export function ConversationUsageSummary({ botId }: { botId: string }) {
   if (usage.isPending) {
     return (
       <div className="grid gap-4 sm:grid-cols-2" aria-hidden>
-        <div className="h-10 animate-pulse rounded-lg bg-[var(--panel-soft)]" />
-        <div className="h-10 animate-pulse rounded-lg bg-[var(--panel-soft)]" />
+        <div className="h-10 animate-pulse rounded-2xl bg-[var(--panel-soft)]" />
+        <div className="h-10 animate-pulse rounded-2xl bg-[var(--panel-soft)]" />
       </div>
     );
   }
 
   if (usage.isError) {
     return (
-      <div className="rounded-lg border border-[var(--border)] bg-[var(--panel)] p-4 text-sm text-red-600">
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-4 text-sm text-red-600">
         Could not load usage.{" "}
         <button type="button" className="underline underline-offset-2" onClick={() => usage.refetch()}>
           Try again
@@ -63,7 +63,7 @@ export function ConversationUsageSummary({ botId }: { botId: string }) {
   if (!usage.data) return null;
 
   return (
-    <div className="rounded-lg border border-[var(--border)] bg-[var(--panel)] p-4">
+    <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <UsageBar label="Credits this period" used={usage.data.creditsUsed} limit={usage.data.creditsLimit} />
         <UsageBar label="Knowledge base" used={usage.data.kbChars} limit={usage.data.kbCharsLimit} />

@@ -12,7 +12,7 @@ export async function SiteHeader() {
     <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--background)]/85 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-2 font-semibold">
-          <Image src={logo} alt="" width={28} height={28} className="rounded-md" />
+          <Image src={logo} alt="" width={28} height={28} className="rounded-xl" />
           Docsy
         </Link>
 

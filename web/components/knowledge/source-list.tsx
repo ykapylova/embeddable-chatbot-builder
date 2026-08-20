@@ -30,7 +30,7 @@ function formatIndexedAt(source: Source): string {
 
 export function SourceList({ botId, sources }: { botId: string; sources: Source[] }) {
   return (
-    <ul className="divide-y divide-[var(--border)] rounded-lg border border-[var(--border)] bg-[var(--panel)]">
+    <ul className="divide-y divide-[var(--border)] rounded-2xl border border-[var(--border)] bg-[var(--panel)]">
       {sources.map((source) => (
         <SourceRow key={source.id} botId={botId} source={source} />
       ))}

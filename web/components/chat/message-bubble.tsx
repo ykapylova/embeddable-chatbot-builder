@@ -21,7 +21,7 @@ const markdownComponents: Components = {
   code: ({ className, ...props }: ComponentProps<"code">) => {
     const isBlock = className?.includes("language-");
     return isBlock ? (
-      <code className={cn("font-mono text-[13px]", className)} {...props} />
+      <code className={cn("font-mono text-sm", className)} {...props} />
     ) : (
       <code
         className="rounded bg-[var(--panel-soft)] px-1 py-0.5 font-mono text-[0.85em]"
@@ -31,7 +31,7 @@ const markdownComponents: Components = {
   },
   pre: ({ ...props }) => (
     <pre
-      className="mt-2 overflow-x-auto rounded-md bg-[var(--panel-soft)] p-3 text-[13px] leading-snug"
+      className="mt-2 overflow-x-auto rounded-xl bg-[var(--panel-soft)] p-3 text-sm leading-snug"
       {...props}
     />
   ),
@@ -104,7 +104,7 @@ function AssistantBubble({
     <div className="max-w-[85%]">
       <div
         className={cn(
-          "rounded-lg rounded-bl-sm px-3 py-2 text-sm",
+          "rounded-2xl rounded-bl-sm px-3 py-2 text-sm",
           isFallback
             ? "border border-dashed border-[var(--chip-amber-fg)] bg-[var(--chip-amber-bg)] text-[var(--foreground)]"
             : "bg-[var(--panel-soft)] text-[var(--foreground)]",
@@ -188,7 +188,7 @@ function ChatMessageBubbleImpl({
     return (
       <div className="flex justify-end">
         <div
-          className="max-w-[85%] rounded-lg rounded-br-sm px-3 py-2 text-sm break-words text-white"
+          className="max-w-[85%] rounded-2xl rounded-br-sm px-3 py-2 text-sm break-words text-white"
           style={{ background: theme.accentColor }}
         >
           {message.content}

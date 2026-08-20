@@ -11,7 +11,7 @@ export default async function BotLayout({
   const { botId } = await params;
 
   return (
-    <div className="mx-auto max-w-4xl px-6 py-10">
+    <div className="mx-auto max-w-4xl px-2 py-6 sm:px-4 sm:py-8">
       <BotHeader botId={botId} />
       <BotNav botId={botId} />
       <div className="pt-6">{children}</div>

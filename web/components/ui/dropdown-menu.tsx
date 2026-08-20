@@ -23,7 +23,7 @@ function DropdownMenuContent({
   return (
     <DropdownMenuPrimitive.Content
       className={cn(
-        "z-[100] min-w-[168px] rounded-lg border border-[var(--border)] bg-[var(--panel)] p-1 text-sm shadow-[0_12px_40px_rgba(0,0,0,0.12)]",
+        "z-[100] min-w-[168px] rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-1.5 text-sm shadow-[0_12px_40px_rgba(0,0,0,0.12)]",
         className,
       )}
       sideOffset={sideOffset}
@@ -35,7 +35,10 @@ function DropdownMenuContent({
 function DropdownMenuItem({ className, ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Item>) {
   return (
     <DropdownMenuPrimitive.Item
-      className={cn("cursor-pointer rounded-md px-2.5 py-2 outline-none data-[highlighted]:bg-[#eceff3]", className)}
+      className={cn(
+        "cursor-pointer rounded-xl px-2.5 py-2 outline-none data-[highlighted]:bg-[var(--panel-soft)]",
+        className,
+      )}
       {...props}
     />
   );

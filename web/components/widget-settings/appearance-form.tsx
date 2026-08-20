@@ -81,7 +81,7 @@ export function AppearanceForm({ botId }: { botId: string }) {
   // showing the loading skeleton forever instead of ever reaching this.
   if (bot.isError) {
     return (
-      <div className="rounded-lg border border-[var(--border)] bg-[var(--panel)] p-6 text-center">
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-6 text-center">
         <p className="text-sm text-red-600">
           {bot.error instanceof Error ? bot.error.message : "Could not load this bot"}
         </p>
@@ -97,10 +97,10 @@ export function AppearanceForm({ botId }: { botId: string }) {
       <div className="grid gap-6 md:grid-cols-2" aria-hidden>
         <div className="space-y-4">
           {[0, 1, 2, 3].map((key) => (
-            <div key={key} className="h-14 animate-pulse rounded-lg bg-[var(--panel-soft)]" />
+            <div key={key} className="h-14 animate-pulse rounded-2xl bg-[var(--panel-soft)]" />
           ))}
         </div>
-        <div className="h-[560px] animate-pulse rounded-lg bg-[var(--panel-soft)]" />
+        <div className="h-[560px] animate-pulse rounded-2xl bg-[var(--panel-soft)]" />
       </div>
     );
   }
@@ -137,10 +137,10 @@ export function AppearanceForm({ botId }: { botId: string }) {
               type="color"
               value={form.accentColor}
               onChange={(event) => patch({ accentColor: event.target.value })}
-              className="h-9 w-14 cursor-pointer rounded-md border border-[var(--border)] bg-[var(--panel)] p-1"
+              className="h-9 w-14 cursor-pointer rounded-xl border border-[var(--border)] bg-[var(--panel)] p-1"
               aria-label="Accent colour"
             />
-            <span className="text-sm text-[var(--muted)]">{form.accentColor}</span>
+            <span className="text-xs text-[var(--muted)]">{form.accentColor}</span>
           </div>
         </Field>
 
@@ -153,8 +153,8 @@ export function AppearanceForm({ botId }: { botId: string }) {
                 onClick={() => patch({ position: option.value })}
                 className={
                   form.position === option.value
-                    ? "rounded-md border border-[var(--accent)] bg-[var(--accent)] px-3 py-1.5 text-sm text-white"
-                    : "rounded-md border border-[var(--border)] bg-[var(--panel)] px-3 py-1.5 text-sm transition hover:bg-[var(--panel-soft)]"
+                    ? "rounded-xl border border-[var(--accent)] bg-[var(--accent)] px-3 py-1.5 text-[11px] text-white"
+                    : "rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-1.5 text-[11px] transition hover:bg-[var(--panel-soft)]"
                 }
               >
                 {option.label}
@@ -261,7 +261,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-sm font-medium">{label}</span>
+      <span className="mb-1.5 block text-xs font-medium">{label}</span>
       {children}
       {hint ? <span className="mt-1.5 block text-xs text-[var(--muted)]">{hint}</span> : null}
     </label>

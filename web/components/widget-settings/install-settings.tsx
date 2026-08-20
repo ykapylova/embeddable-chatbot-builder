@@ -18,7 +18,7 @@ export function InstallSettings({ botId }: { botId: string }) {
     return (
       <div className="space-y-4" aria-hidden>
         {[0, 1, 2].map((key) => (
-          <div key={key} className="h-24 animate-pulse rounded-lg bg-[var(--panel-soft)]" />
+          <div key={key} className="h-24 animate-pulse rounded-2xl bg-[var(--panel-soft)]" />
         ))}
       </div>
     );
@@ -26,7 +26,7 @@ export function InstallSettings({ botId }: { botId: string }) {
 
   if (bot.isError) {
     return (
-      <div className="rounded-lg border border-[var(--border)] bg-[var(--panel)] p-6 text-center">
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-6 text-center">
         <p className="text-sm text-red-600">
           {bot.error instanceof Error ? bot.error.message : "Could not load this bot"}
         </p>
@@ -40,7 +40,7 @@ export function InstallSettings({ botId }: { botId: string }) {
   return (
     <div className="max-w-xl space-y-8">
       <section>
-        <h2 className="text-sm font-medium">Embed snippet</h2>
+        <h2 className="text-xs font-medium">Embed snippet</h2>
         <p className="mt-1 text-sm text-[var(--muted)]">
           Paste this right before <code>&lt;/body&gt;</code> on any page you want the widget on.
         </p>
@@ -48,7 +48,7 @@ export function InstallSettings({ botId }: { botId: string }) {
       </section>
 
       <section>
-        <h2 className="text-sm font-medium">Allowed domains</h2>
+        <h2 className="text-xs font-medium">Allowed domains</h2>
         <p className="mt-1 text-sm text-[var(--muted)]">
           Only pages on these domains can load the widget with this key — this is what stops anyone
           who finds the snippet from embedding your bot on a site you do not own.
@@ -56,8 +56,8 @@ export function InstallSettings({ botId }: { botId: string }) {
         <DomainListEditor botId={botId} domains={bot.data.allowedDomains} />
       </section>
 
-      <section className="rounded-lg border border-[var(--border)] bg-[var(--panel)] p-4">
-        <h2 className="text-sm font-medium">Test it</h2>
+      <section className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-4">
+        <h2 className="text-xs font-medium">Test it</h2>
         <p className="mt-1 text-sm text-[var(--muted)]">
           Add a domain above, paste the snippet into a page on that domain, then reload it — a chat
           bubble appears in the corner set on the{" "}

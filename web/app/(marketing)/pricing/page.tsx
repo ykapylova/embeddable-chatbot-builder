@@ -17,7 +17,7 @@ export default async function PricingPage() {
   return (
     <>
       <div className="px-6 pt-16 text-center">
-        <h1 className="text-3xl font-semibold sm:text-4xl">Pricing</h1>
+        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Pricing</h1>
         <p className="mx-auto mt-3 max-w-lg text-[var(--muted)]">
           Pay for answers, not for seats. Every plan includes citations and the honest fallback.
         </p>

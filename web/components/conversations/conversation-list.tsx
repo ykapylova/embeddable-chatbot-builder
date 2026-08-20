@@ -21,7 +21,7 @@ export function ConversationList({ botId, filter }: { botId: string; filter: Con
 
   if (query.isError) {
     return (
-      <div className="rounded-lg border border-[var(--border)] bg-[var(--panel)] p-6 text-center">
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-6 text-center">
         <p className="text-sm text-red-600">
           {query.error instanceof Error ? query.error.message : "Could not load conversations"}
         </p>
@@ -37,7 +37,7 @@ export function ConversationList({ botId, filter }: { botId: string; filter: Con
 
   if (items.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-[var(--border)] bg-[var(--panel)] p-10 text-center">
+      <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--panel)] p-10 text-center">
         <MessageCircle className="mx-auto mb-3 h-8 w-8 text-[var(--muted)]" />
         <h2 className="text-base font-medium">No conversations match this view</h2>
         <p className="mx-auto mt-1 max-w-md text-sm text-[var(--muted)]">
@@ -50,7 +50,7 @@ export function ConversationList({ botId, filter }: { botId: string; filter: Con
 
   return (
     <div className="space-y-3">
-      <ul className="divide-y divide-[var(--border)] rounded-lg border border-[var(--border)] bg-[var(--panel)]">
+      <ul className="divide-y divide-[var(--border)] rounded-2xl border border-[var(--border)] bg-[var(--panel)]">
         {items.map((item) => (
           <ConversationRow key={item.id} botId={botId} item={item} />
         ))}
@@ -65,7 +65,7 @@ export function ConversationList({ botId, filter }: { botId: string; filter: Con
       ) : null}
 
       {hiddenByRetention > 0 ? (
-        <p className="rounded-lg border border-dashed border-[var(--border)] bg-[var(--panel)] p-3 text-center text-xs text-[var(--muted)]">
+        <p className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--panel)] p-3 text-center text-xs text-[var(--muted)]">
           {hiddenByRetention} older {hiddenByRetention === 1 ? "conversation is" : "conversations are"} hidden
           — your plan keeps history for a limited window. Upgrade to see further back.
         </p>
@@ -78,7 +78,7 @@ function ConversationListSkeleton() {
   return (
     <div className="space-y-2" aria-hidden>
       {[0, 1, 2, 3].map((key) => (
-        <div key={key} className="h-16 animate-pulse rounded-lg border border-[var(--border)] bg-[var(--panel-soft)]" />
+        <div key={key} className="h-16 animate-pulse rounded-2xl border border-[var(--border)] bg-[var(--panel-soft)]" />
       ))}
     </div>
   );

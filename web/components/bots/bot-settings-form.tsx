@@ -78,7 +78,7 @@ export function BotSettingsForm({ botId }: { botId: string }) {
     return (
       <div className="space-y-4" aria-hidden>
         {[0, 1, 2].map((key) => (
-          <div key={key} className="h-16 animate-pulse rounded-lg bg-[var(--panel-soft)]" />
+          <div key={key} className="h-16 animate-pulse rounded-2xl bg-[var(--panel-soft)]" />
         ))}
       </div>
     );
@@ -86,7 +86,7 @@ export function BotSettingsForm({ botId }: { botId: string }) {
 
   if (bot.isError) {
     return (
-      <div className="rounded-lg border border-[var(--border)] bg-[var(--panel)] p-6 text-center">
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-6 text-center">
         <p className="text-sm text-red-600">
           {bot.error instanceof Error ? bot.error.message : "Could not load bot"}
         </p>
@@ -142,8 +142,8 @@ export function BotSettingsForm({ botId }: { botId: string }) {
                 onClick={() => patch({ tone: tone.value })}
                 className={
                   form.tone === tone.value
-                    ? "rounded-md border border-[var(--accent)] bg-[var(--accent)] px-3 py-1.5 text-sm text-white"
-                    : "rounded-md border border-[var(--border)] bg-[var(--panel)] px-3 py-1.5 text-sm transition hover:bg-[var(--panel-soft)]"
+                    ? "rounded-xl border border-[var(--accent)] bg-[var(--accent)] px-3 py-1.5 text-[11px] text-white"
+                    : "rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-1.5 text-[11px] transition hover:bg-[var(--panel-soft)]"
                 }
                 title={tone.hint}
               >
@@ -182,7 +182,7 @@ export function BotSettingsForm({ botId }: { botId: string }) {
             rows={4}
             placeholder="You are the support assistant for Acme, a project management tool for design teams."
             onChange={(event) => patch({ systemPrompt: event.target.value })}
-            className="w-full rounded-md border border-[var(--border)] bg-[var(--panel)] px-3 py-2 text-sm outline-none transition focus:border-[#c9d0dd]"
+            className="w-full rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-2 text-xs outline-none transition focus:border-[#c9d0dd]"
           />
         </Field>
 
@@ -201,7 +201,7 @@ export function BotSettingsForm({ botId }: { botId: string }) {
         </div>
       </form>
 
-      <section className="rounded-lg border border-red-200 bg-[var(--panel)] p-4">
+      <section className="rounded-2xl border border-red-200 bg-[var(--panel)] p-4">
         <h2 className="text-sm font-medium">Delete this bot</h2>
         <p className="mt-1 text-sm text-[var(--muted)]">
           Removes the bot, its knowledge base and its conversations. The widget stops answering
@@ -248,7 +248,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-sm font-medium">{label}</span>
+      <span className="mb-1.5 block text-xs font-medium">{label}</span>
       {children}
       {hint ? <span className="mt-1.5 block text-xs text-[var(--muted)]">{hint}</span> : null}
     </label>

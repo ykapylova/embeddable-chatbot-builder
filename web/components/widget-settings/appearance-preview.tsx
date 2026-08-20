@@ -24,7 +24,7 @@ export function AppearancePreview({
   position: BubblePosition;
 }) {
   return (
-    <div className="rounded-lg border border-[var(--border)] bg-[var(--panel-soft)] p-4">
+    <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-soft)] p-4">
       <div className="mb-3 flex items-center gap-1.5">
         <span className="h-2.5 w-2.5 rounded-full bg-[#e11d48]" />
         <span className="h-2.5 w-2.5 rounded-full bg-[#d97706]" />
@@ -34,7 +34,7 @@ export function AppearancePreview({
 
       <div
         className={cn(
-          "flex h-[480px] items-end rounded-md border border-dashed border-[var(--border)] bg-[var(--panel)] p-4",
+          "flex h-[480px] items-end rounded-xl border border-dashed border-[var(--border)] bg-[var(--panel)] p-4",
           position === "bottom-left" ? "justify-start" : "justify-end",
         )}
       >

@@ -19,17 +19,19 @@ export function InstallSnippet({ publicKey }: { publicKey: string }) {
 
   return (
     <div className="mt-3 space-y-2">
-      <pre className="overflow-x-auto rounded-md border border-[var(--border)] bg-[var(--panel)] p-3 text-xs">
+      <pre className="overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--panel)] p-3 text-xs">
         <code>{snippet}</code>
       </pre>
       <Button type="button" variant="outline" size="sm" onClick={handleCopy}>
         {copied ? (
           <>
-            <Check className="h-4 w-4" /> Copied
+            <Check className="h-4 w-4" />
+            Copied
           </>
         ) : (
           <>
-            <Copy className="h-4 w-4" /> Copy snippet
+            <Copy className="h-4 w-4" />
+            Copy snippet
           </>
         )}
       </Button>
