@@ -13,14 +13,14 @@ shows up in the dashboard as a gap in your documentation.
 | --- | --- |
 | 0. Bootstrap | ✅ done |
 | 1. Accounts and bots | ✅ done |
-| 2. Knowledge sources and indexing | — |
+| 2. Knowledge sources and indexing | ✅ done |
 | 3. Retrieval | — |
 | 4. Chat | — |
 | 5. Widget | — |
 | 6. Conversations, gaps, leads | — |
 | 7. Billing | — |
 | 8. Answer quality | — |
-| 9. Landing page | — |
+| 9. Landing page | ✅ done |
 | 10. Polish | — |
 
 ## Stack
@@ -37,7 +37,19 @@ You need Node.js 22+, a Supabase project, a Clerk application and an OpenAI key.
 1. Create a project.
 2. **Database → Extensions** → enable `vector` (the migration also enables it, but this is safer).
 3. **Storage → New bucket** → `knowledge-sources`, private.
-4. **Settings → Database → Connection string (URI)** → put it in `DATABASE_URL`.
+4. **Connect** (top bar) → **Session pooler** → copy the URI into `DATABASE_URL`, replacing
+   `[YOUR-PASSWORD]` with the database password.
+5. **Settings → API Keys** → project URL into `NEXT_PUBLIC_SUPABASE_URL`, the publishable key into
+   `NEXT_PUBLIC_SUPABASE_ANON_KEY`, the secret key into `SUPABASE_SERVICE_ROLE_KEY`.
+
+Take the session pooler, not the direct connection: `db.<ref>.supabase.co` resolves over IPv6 only,
+so on an IPv4-only network it fails with no error at all — `db:migrate` simply hangs. The pooler
+host contains `pooler.supabase.com` and its user is `postgres.<ref>` rather than `postgres`. Keep
+port 5432; the transaction pooler on 6543 cannot run migrations.
+
+Projects created after the API key rotation reject the legacy `anon` / `service_role` JWTs even
+though the dashboard still lists them, and Storage answers `JWS Protected Header is invalid`. Use
+the `sb_publishable_…` / `sb_secret_…` pair instead — the variable names stay as they are.
 
 ### 2. The app
 
