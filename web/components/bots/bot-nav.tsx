@@ -19,7 +19,7 @@ export function BotNav({ botId }: { botId: string }) {
   ];
 
   return (
-    <nav className="flex gap-1 overflow-x-auto border-b border-[var(--border)]">
+    <nav className="flex gap-1 overflow-x-auto rounded-full bg-[var(--panel-soft)] p-1">
       {tabs.map((tab) => {
         const isActive = tab.exact
           ? pathname === tab.href
@@ -29,10 +29,10 @@ export function BotNav({ botId }: { botId: string }) {
             key={tab.href}
             href={tab.href}
             className={cn(
-              "-mb-px shrink-0 border-b-2 px-3 py-2 text-sm whitespace-nowrap transition",
+              "shrink-0 rounded-full px-3.5 py-1.5 text-sm whitespace-nowrap transition",
               isActive
-                ? "border-[var(--accent)] font-medium text-[var(--foreground)]"
-                : "border-transparent text-[var(--muted)] hover:text-[var(--foreground)]",
+                ? "bg-[var(--chrome)] font-medium text-[var(--chrome-foreground)]"
+                : "text-[var(--muted)] hover:text-[var(--foreground)]",
             )}
           >
             {tab.label}

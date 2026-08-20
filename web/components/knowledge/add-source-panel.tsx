@@ -52,7 +52,7 @@ export function AddSourcePanel({ botId }: { botId: string }) {
   const [tab, setTab] = useState<Tab>("file");
 
   return (
-    <div className="rounded-lg border border-[var(--border)] bg-[var(--panel)] p-4">
+    <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-4">
       <div className="flex flex-wrap gap-1.5">
         {TABS.map((option) => (
           <button
@@ -61,8 +61,8 @@ export function AddSourcePanel({ botId }: { botId: string }) {
             onClick={() => setTab(option.value)}
             className={
               tab === option.value
-                ? "flex items-center gap-1.5 rounded-md border border-[var(--accent)] bg-[var(--accent)] px-3 py-1.5 text-sm text-white"
-                : "flex items-center gap-1.5 rounded-md border border-[var(--border)] bg-[var(--panel)] px-3 py-1.5 text-sm transition hover:bg-[var(--panel-soft)]"
+                ? "flex items-center gap-1.5 rounded-xl border border-[var(--accent)] bg-[var(--accent)] px-3 py-1.5 text-sm text-white"
+                : "flex items-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-1.5 text-sm transition hover:bg-[var(--panel-soft)]"
             }
           >
             <option.icon className="h-3.5 w-3.5" />
@@ -137,8 +137,8 @@ function FileTab({ botId }: { botId: string }) {
         }}
         className={
           isDragOver
-            ? "rounded-lg border-2 border-dashed border-[var(--accent)] bg-[var(--panel-soft)] p-8 text-center transition"
-            : "rounded-lg border-2 border-dashed border-[var(--border)] p-8 text-center transition"
+            ? "rounded-2xl border-2 border-dashed border-[var(--accent)] bg-[var(--panel-soft)] p-8 text-center transition"
+            : "rounded-2xl border-2 border-dashed border-[var(--border)] p-8 text-center transition"
         }
       >
         <UploadCloud className="mx-auto mb-2 h-6 w-6 text-[var(--muted)]" />
@@ -174,7 +174,7 @@ function FileTab({ botId }: { botId: string }) {
           {queue.map((item) => (
             <li
               key={item.id}
-              className="flex items-center justify-between gap-2 rounded-md border border-[var(--border)] px-3 py-2 text-sm"
+              className="flex items-center justify-between gap-2 rounded-xl border border-[var(--border)] px-3 py-2 text-sm"
             >
               <span className="flex min-w-0 items-center gap-2">
                 {item.status === "uploading" ? (
@@ -297,7 +297,7 @@ function TextTab({ botId }: { botId: string }) {
         maxLength={SOURCE_TEXT_MAX_CHARS}
         rows={6}
         placeholder="Paste the text you want the bot to know."
-        className="w-full rounded-md border border-[var(--border)] bg-[var(--panel)] px-3 py-2 text-sm outline-none transition focus:border-[#c9d0dd]"
+        className="w-full rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-2 text-sm outline-none transition focus:border-[#c9d0dd]"
       />
       <div className="flex items-center gap-3">
         <Button type="submit" disabled={!canSubmit}>
@@ -353,7 +353,7 @@ function FaqTab({ botId }: { botId: string }) {
         maxLength={SOURCE_FAQ_ANSWER_MAX_CHARS}
         rows={4}
         placeholder="The answer, written the way you'd want it read back."
-        className="w-full rounded-md border border-[var(--border)] bg-[var(--panel)] px-3 py-2 text-sm outline-none transition focus:border-[#c9d0dd]"
+        className="w-full rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-2 text-sm outline-none transition focus:border-[#c9d0dd]"
       />
       <div className="flex items-center gap-3">
         <Button type="submit" disabled={!canSubmit}>

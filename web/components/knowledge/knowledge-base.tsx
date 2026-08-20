@@ -26,7 +26,7 @@ export function KnowledgeBase({ botId }: { botId: string }) {
       {sources.isPending ? <KnowledgeSkeleton /> : null}
 
       {sources.isError ? (
-        <div className="rounded-lg border border-[var(--border)] bg-[var(--panel)] p-6 text-center">
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-6 text-center">
           <p className="text-sm text-red-600">
             {sources.error instanceof Error ? sources.error.message : "Could not load sources"}
           </p>
@@ -50,7 +50,7 @@ export function KnowledgeBase({ botId }: { botId: string }) {
 
 function EmptyState() {
   return (
-    <div className="rounded-lg border border-dashed border-[var(--border)] bg-[var(--panel)] p-10 text-center">
+    <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--panel)] p-10 text-center">
       <BookOpen className="mx-auto mb-3 h-8 w-8 text-[var(--muted)]" />
       <h2 className="text-base font-medium">No sources yet</h2>
       <p className="mx-auto mt-1 max-w-md text-sm text-[var(--muted)]">
@@ -67,7 +67,7 @@ function KnowledgeSkeleton() {
   return (
     <div className="space-y-2" aria-hidden>
       {[0, 1, 2].map((key) => (
-        <div key={key} className="h-16 animate-pulse rounded-lg border border-[var(--border)] bg-[var(--panel-soft)]" />
+        <div key={key} className="h-16 animate-pulse rounded-2xl border border-[var(--border)] bg-[var(--panel-soft)]" />
       ))}
     </div>
   );

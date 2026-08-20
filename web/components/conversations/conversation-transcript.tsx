@@ -24,7 +24,7 @@ function TranscriptBubble({ message }: { message: ConversationMessage }) {
       <div className="max-w-[85%]">
         <div
           className={cn(
-            "rounded-lg px-3 py-2 text-sm break-words",
+            "rounded-2xl px-3 py-2 text-sm break-words",
             isUser
               ? "rounded-br-sm bg-[var(--foreground)] text-white"
               : "rounded-bl-sm bg-[var(--panel-soft)] text-[var(--foreground)]",
@@ -99,13 +99,13 @@ export function ConversationTranscriptView({
       {transcript.isPending ? (
         <div className="space-y-2" aria-hidden>
           {[0, 1, 2].map((key) => (
-            <div key={key} className="h-14 animate-pulse rounded-lg bg-[var(--panel-soft)]" />
+            <div key={key} className="h-14 animate-pulse rounded-2xl bg-[var(--panel-soft)]" />
           ))}
         </div>
       ) : null}
 
       {transcript.isError ? (
-        <div className="rounded-lg border border-[var(--border)] bg-[var(--panel)] p-6 text-center">
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-6 text-center">
           <p className="text-sm text-red-600">
             {transcript.error instanceof Error ? transcript.error.message : "Could not load this conversation"}
           </p>
@@ -132,7 +132,7 @@ export function ConversationTranscriptView({
           {transcript.data.messages.length === 0 ? (
             <p className="text-sm text-[var(--muted)]">This conversation has no messages.</p>
           ) : (
-            <div className="space-y-3 rounded-lg border border-[var(--border)] bg-[var(--panel)] p-4">
+            <div className="space-y-3 rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-4">
               {transcript.data.messages.map((message) => (
                 <TranscriptBubble key={message.id} message={message} />
               ))}

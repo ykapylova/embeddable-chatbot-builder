@@ -23,6 +23,59 @@
   --chip-amber-fg: #d97706;
   --chip-rose-bg: #fff1f4;
   --chip-rose-fg: #e11d48;
+  --chip-olive-bg: #e4eedd;
+  --chip-olive-fg: #4f6b3b;
+  --chip-periwinkle-bg: #e4e9fb;
+  --chip-periwinkle-fg: #4a5fb0;
+  --chip-neutral-bg: #f3f4f6;
+  --chip-neutral-fg: #6b7280;
+}
+
+/*
+ * App shell palette ("Intelly" reference, see DESIGN_SYSTEM.md) — scoped to the
+ * console (the `(app)` route group), not the marketing site, which keeps its own
+ * violet/teal brand identity. Component classes below read the same --background /
+ * --foreground / --panel / --accent / --border tokens as before; overriding them
+ * here re-themes every screen under .app-shell without touching each file.
+ */
+.app-shell {
+  --background: #f7f2e7;
+  --foreground: #1c1b1a;
+  --muted: #8a857c;
+  --panel: #ffffff;
+  --panel-soft: #f1ecdb;
+  --accent: #e85c7b;
+  --accent-foreground: #ffffff;
+  --border: #ece4d3;
+
+  --chrome: #1c1b1a;
+  --chrome-foreground: #f7f2e7;
+  --chrome-soft: #2a2927;
+
+  /* Solid category tones — stat cards, hero panels. */
+  --tone-amber-bg: #f2c438;
+  --tone-amber-fg: #1c1b1a;
+  --tone-rose-bg: #f2a0c4;
+  --tone-rose-fg: #1c1b1a;
+  --tone-olive-bg: #a8b37a;
+  --tone-olive-fg: #1c1b1a;
+  --tone-periwinkle-bg: #b9c6f2;
+  --tone-periwinkle-fg: #1c1b1a;
+  --tone-accent-bg: #e85c7b;
+  --tone-accent-fg: #ffffff;
+
+  /* Soft category tones — tag pills. */
+  --chip-olive-bg: #e4eedd;
+  --chip-olive-fg: #4f6b3b;
+  --chip-periwinkle-bg: #e4e9fb;
+  --chip-periwinkle-fg: #4a5fb0;
+  --chip-neutral-bg: #efebe0;
+  --chip-neutral-fg: #8a857c;
+
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-app-sans), Inter, ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
 }
 
 * {
@@ -45,9 +98,16 @@ textarea {
   font: inherit;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+/*
+ * Layered so Tailwind's utility classes (also layered, but later) win over this
+ * default — an unlayered rule here would beat any `text-*` utility on a link
+ * regardless of specificity, which silently broke colored nav links.
+ */
+@layer base {
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
 }
 
 @keyframes chat-fade-up {

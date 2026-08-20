@@ -130,7 +130,7 @@ export function ChatSurface({ variant, theme, greeting, sendMessage, onFeedback,
     <div
       className={cn(
         "flex h-full min-h-0 flex-col overflow-hidden bg-[var(--panel)]",
-        variant === "app" ? "rounded-lg border border-[var(--border)]" : "rounded-2xl border border-[var(--border)] shadow-xl",
+        variant === "app" ? "rounded-2xl border border-[var(--border)]" : "rounded-2xl border border-[var(--border)] shadow-xl",
         className,
       )}
     >

@@ -32,13 +32,13 @@ export function BotPlayground({ botId }: { botId: string }) {
 
       {bot.isPending ? (
         <div
-          className="h-[560px] animate-pulse rounded-lg border border-[var(--border)] bg-[var(--panel-soft)]"
+          className="h-[560px] animate-pulse rounded-2xl border border-[var(--border)] bg-[var(--panel-soft)]"
           aria-hidden
         />
       ) : null}
 
       {bot.isError ? (
-        <div className="rounded-lg border border-[var(--border)] bg-[var(--panel)] p-6 text-center">
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-6 text-center">
           <p className="text-sm text-red-600">
             {bot.error instanceof Error ? bot.error.message : "Could not load this bot"}
           </p>

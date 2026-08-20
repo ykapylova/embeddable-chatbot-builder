@@ -91,7 +91,7 @@ export function DomainListEditor({ botId, domains }: { botId: string; domains: s
           {domains.map((domain) => (
             <li
               key={domain}
-              className="flex items-center justify-between rounded-md border border-[var(--border)] bg-[var(--panel)] px-3 py-1.5 text-sm"
+              className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-1.5 text-sm"
             >
               {domain}
               <button
