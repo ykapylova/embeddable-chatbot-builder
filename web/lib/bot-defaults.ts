@@ -21,3 +21,22 @@ export type BotTone = (typeof BOT_TONES)[number]["value"];
 export const BOT_NAME_MAX = 60;
 export const BOT_MESSAGE_MAX = 500;
 export const BOT_PROMPT_MAX = 2000;
+export const THEME_PLACEHOLDER_MAX = 80;
+
+export const BUBBLE_POSITIONS = [
+  { value: "bottom-right", label: "Bottom right" },
+  { value: "bottom-left", label: "Bottom left" },
+] as const;
+
+export type BubblePosition = (typeof BUBBLE_POSITIONS)[number]["value"];
+
+/**
+ * Must match the fallbacks in `server/services/widget/theme.ts` — that is what
+ * a bot with an untouched `theme` column actually renders, so the appearance
+ * form and its preview need to start from the same values.
+ */
+export const THEME_DEFAULTS = {
+  accentColor: "#4f46e5",
+  placeholder: "Ask a question…",
+  position: "bottom-right" as BubblePosition,
+} as const;

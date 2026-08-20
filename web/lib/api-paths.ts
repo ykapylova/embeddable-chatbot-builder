@@ -14,4 +14,6 @@ export const appPaths = {
   bot: (botId: string) => `/bots/${botId}`,
   botSettings: (botId: string) => `/bots/${botId}/settings`,
   botKnowledge: (botId: string) => `/bots/${botId}/knowledge`,
+  botAppearance: (botId: string) => `/bots/${botId}/appearance`,
+  botInstall: (botId: string) => `/bots/${botId}/install`,
 } as const;
