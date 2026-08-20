@@ -1,4 +1,5 @@
 import type { Bot, BotListItem, CreateBotBody, UpdateBotBody } from "lib/api-types/bot";
+import type { ChatTurnRequest } from "lib/api-types/chat";
 import type { RetrievalDebugResponse } from "lib/api-types/retrieval";
 import type { CreateJsonSourceBody, Source } from "lib/api-types/source";
 import { apiPaths } from "./api-paths";
@@ -129,4 +130,29 @@ export function deleteSource(botId: string, sourceId: string): Promise<void> {
 
 export function reindexSource(botId: string, sourceId: string): Promise<Source> {
   return request<Source>(apiPaths.sourceReindex(botId, sourceId), { method: "POST" });
+}
+
+/**
+ * The chat endpoint streams SSE rather than a JSON envelope, so this bypasses
+ * `request()` and hands back the raw `Response` for `consumeSseJsonStream` to
+ * read. Errors before the stream starts (auth, validation) still throw
+ * `ApiError`, same as every other client call.
+ */
+export async function postChatTurn(
+  botId: string,
+  body: ChatTurnRequest,
+  signal: AbortSignal,
+): Promise<Response> {
+  const res = await fetch(apiPaths.chat(botId), {
+    method: "POST",
+    credentials: "include",
+    headers: jsonHeaders,
+    body: JSON.stringify(body),
+    signal,
+  });
+
+  if (!res.ok || !res.body) {
+    throw await readApiError(res);
+  }
+  return res;
 }
