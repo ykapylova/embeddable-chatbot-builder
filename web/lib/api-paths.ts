@@ -11,4 +11,5 @@ export const appPaths = {
   dashboard: () => "/dashboard",
   bot: (botId: string) => `/bots/${botId}`,
   botSettings: (botId: string) => `/bots/${botId}/settings`,
+  botKnowledge: (botId: string) => `/bots/${botId}/knowledge`,
 } as const;

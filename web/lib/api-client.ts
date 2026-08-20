@@ -1,4 +1,5 @@
 import type { Bot, BotListItem, CreateBotBody, UpdateBotBody } from "lib/api-types/bot";
+import type { CreateJsonSourceBody, Source } from "lib/api-types/source";
 import { apiPaths } from "./api-paths";
 
 const jsonHeaders = { "Content-Type": "application/json" };
@@ -95,4 +96,28 @@ export function updateBot(botId: string, body: UpdateBotBody): Promise<Bot> {
 
 export function deleteBot(botId: string): Promise<void> {
   return requestAck(apiPaths.bot(botId), { method: "DELETE" });
+}
+
+export function getSources(botId: string): Promise<Source[]> {
+  return request<Source[]>(apiPaths.sources(botId));
+}
+
+export function createSource(botId: string, body: CreateJsonSourceBody): Promise<Source> {
+  return request<Source>(apiPaths.sources(botId), {
+    method: "POST",
+    headers: jsonHeaders,
+    body: JSON.stringify(body),
+  });
+}
+
+export function createFileSource(botId: string, formData: FormData): Promise<Source> {
+  return request<Source>(apiPaths.sources(botId), { method: "POST", body: formData });
+}
+
+export function deleteSource(botId: string, sourceId: string): Promise<void> {
+  return requestAck(apiPaths.source(botId, sourceId), { method: "DELETE" });
+}
+
+export function reindexSource(botId: string, sourceId: string): Promise<Source> {
+  return request<Source>(apiPaths.sourceReindex(botId, sourceId), { method: "POST" });
 }
