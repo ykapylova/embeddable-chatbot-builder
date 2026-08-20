@@ -62,7 +62,12 @@ export function ChatSurface({ variant, theme, greeting, sendMessage, onFeedback,
           } else if (event.type === "delta") {
             updateAssistant(assistantId, (m) => ({ ...m, content: m.content + event.text }));
           } else if (event.type === "done") {
-            updateAssistant(assistantId, (m) => ({ ...m, status: "done", answered: event.answered }));
+            updateAssistant(assistantId, (m) => ({
+              ...m,
+              status: "done",
+              answered: event.answered,
+              citations: event.citations,
+            }));
           } else {
             updateAssistant(assistantId, (m) => ({ ...m, status: "error", errorMessage: event.message }));
           }
