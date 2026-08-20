@@ -1,0 +1,227 @@
+/**
+ * Docsy embeddable widget. No dependencies. Reads `data-bot-key` off its own
+ * `<script>` tag, draws a bubble button, and opens an iframe pointing at
+ * `/embed/<publicKey>` for the actual chat — the iframe is what gives full
+ * CSS/JS isolation from the host page (PROJECT_SPEC.md §9).
+ *
+ * Every style here is set via the CSSOM (`element.style.x = ...`), never a
+ * `<style>` tag or the `style` attribute, so a strict host CSP that blocks
+ * inline style sources still lets the widget render.
+ */
+(function () {
+  "use strict";
+
+  var currentScript = document.currentScript;
+  if (!currentScript) return;
+
+  var publicKey = currentScript.getAttribute("data-bot-key");
+  if (!publicKey) {
+    console.error("[ChatWidget] Missing data-bot-key on the widget <script> tag.");
+    return;
+  }
+
+  var APP_ORIGIN = new URL(currentScript.src, window.location.href).origin;
+  var PANEL_RADIUS = "16px";
+  var PANEL_SHADOW = "0 16px 48px rgba(0,0,0,0.24)";
+
+  var state = {
+    open: false,
+    mode: "panel",
+    iframe: null,
+    panelHost: null,
+    pendingAsk: null,
+  };
+
+  function postToIframe(message) {
+    if (state.iframe && state.iframe.contentWindow) {
+      state.iframe.contentWindow.postMessage(message, APP_ORIGIN);
+    }
+  }
+
+  function applyPanelGeometry() {
+    var host = state.panelHost;
+    if (!host) return;
+
+    if (state.mode === "fullscreen") {
+      host.style.top = "0";
+      host.style.left = "0";
+      host.style.right = "0";
+      host.style.bottom = "0";
+      host.style.width = "100%";
+      host.style.height = "100%";
+    } else {
+      host.style.top = "";
+      host.style.left = "";
+      host.style.bottom = "92px";
+      host.style.right = "20px";
+      host.style.width = "380px";
+      host.style.height = "min(600px, 80vh)";
+    }
+    host.style.display = state.open ? "block" : "none";
+
+    if (state.iframe) {
+      state.iframe.style.borderRadius = state.mode === "fullscreen" ? "0" : PANEL_RADIUS;
+      state.iframe.style.boxShadow = state.mode === "fullscreen" ? "none" : PANEL_SHADOW;
+    }
+  }
+
+  function ensureIframe() {
+    if (state.iframe) return state.iframe;
+
+    var host = document.createElement("div");
+    host.style.all = "initial";
+    host.style.position = "fixed";
+    host.style.zIndex = "2147483000";
+    document.body.appendChild(host);
+    state.panelHost = host;
+
+    var iframe = document.createElement("iframe");
+    iframe.title = "Chat";
+    iframe.style.width = "100%";
+    iframe.style.height = "100%";
+    iframe.style.border = "none";
+    iframe.style.background = "transparent";
+
+    var src =
+      APP_ORIGIN +
+      "/embed/" +
+      encodeURIComponent(publicKey) +
+      "?parentOrigin=" +
+      encodeURIComponent(window.location.origin) +
+      "&pageUrl=" +
+      encodeURIComponent(window.location.href);
+    iframe.src = src;
+
+    iframe.addEventListener("load", function () {
+      if (state.pendingAsk) {
+        postToIframe({ type: "ask", text: state.pendingAsk });
+        state.pendingAsk = null;
+      }
+    });
+
+    host.appendChild(iframe);
+    state.iframe = iframe;
+    applyPanelGeometry();
+    return iframe;
+  }
+
+  function setBubbleIcon() {
+    bubble.textContent = state.open ? "✕" : "💬";
+    bubble.setAttribute("aria-label", state.open ? "Close chat" : "Open chat");
+  }
+
+  function setUnread(value) {
+    badge.style.display = value ? "block" : "none";
+  }
+
+  function open() {
+    if (state.open) return;
+    state.open = true;
+    ensureIframe();
+    applyPanelGeometry();
+    setBubbleIcon();
+    setUnread(false);
+    postToIframe({ type: "open" });
+  }
+
+  function close() {
+    if (!state.open) return;
+    state.open = false;
+    if (state.panelHost) state.panelHost.style.display = "none";
+    setBubbleIcon();
+    postToIframe({ type: "close" });
+  }
+
+  function toggle() {
+    if (state.open) close();
+    else open();
+  }
+
+  function ask(text) {
+    if (typeof text !== "string" || !text.trim()) return;
+    open();
+    if (state.iframe && state.iframe.contentWindow) {
+      postToIframe({ type: "ask", text: text });
+    } else {
+      state.pendingAsk = text;
+    }
+  }
+
+  // ---- Bubble button, in a shadow root so the host page's CSS cannot reach
+  // it and the widget's own styles cannot leak back out. ----
+
+  var bubbleHost = document.createElement("div");
+  bubbleHost.style.all = "initial";
+  bubbleHost.style.position = "fixed";
+  bubbleHost.style.zIndex = "2147483000";
+  bubbleHost.style.bottom = "20px";
+  bubbleHost.style.right = "20px";
+
+  var shadow = bubbleHost.attachShadow({ mode: "open" });
+  var wrap = document.createElement("div");
+  wrap.style.position = "relative";
+
+  var bubble = document.createElement("button");
+  bubble.type = "button";
+  bubble.style.width = "56px";
+  bubble.style.height = "56px";
+  bubble.style.borderRadius = "50%";
+  bubble.style.border = "none";
+  bubble.style.cursor = "pointer";
+  bubble.style.background = "#4f46e5";
+  bubble.style.boxShadow = "0 8px 24px rgba(0,0,0,0.2)";
+  bubble.style.display = "flex";
+  bubble.style.alignItems = "center";
+  bubble.style.justifyContent = "center";
+  bubble.style.color = "#ffffff";
+  bubble.style.fontFamily = "system-ui, sans-serif";
+  bubble.style.fontSize = "22px";
+  bubble.style.padding = "0";
+  bubble.addEventListener("click", toggle);
+
+  var badge = document.createElement("span");
+  badge.style.position = "absolute";
+  badge.style.top = "-2px";
+  badge.style.right = "-2px";
+  badge.style.width = "12px";
+  badge.style.height = "12px";
+  badge.style.borderRadius = "50%";
+  badge.style.background = "#ef4444";
+  badge.style.border = "2px solid #ffffff";
+  badge.style.display = "none";
+
+  wrap.appendChild(bubble);
+  wrap.appendChild(badge);
+  shadow.appendChild(wrap);
+  setBubbleIcon();
+
+  // ---- iframe -> host messages, only ever accepted from our own iframe. ----
+  window.addEventListener("message", function (event) {
+    if (event.origin !== APP_ORIGIN) return;
+    if (!state.iframe || event.source !== state.iframe.contentWindow) return;
+
+    var data = event.data;
+    if (!data || typeof data.type !== "string") return;
+
+    if (data.type === "resize" && (data.mode === "panel" || data.mode === "fullscreen")) {
+      state.mode = data.mode;
+      applyPanelGeometry();
+    } else if (data.type === "unread") {
+      if (!state.open) setUnread(true);
+    } else if (data.type === "close") {
+      close();
+    }
+  });
+
+  function mount() {
+    document.body.appendChild(bubbleHost);
+  }
+
+  if (document.body) {
+    mount();
+  } else {
+    document.addEventListener("DOMContentLoaded", mount);
+  }
+
+  window.ChatWidget = { open: open, close: close, ask: ask };
+})();
