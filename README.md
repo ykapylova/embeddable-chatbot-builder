@@ -14,8 +14,8 @@ shows up in the dashboard as a gap in your documentation.
 | 0. Bootstrap | ✅ done |
 | 1. Accounts and bots | ✅ done |
 | 2. Knowledge sources and indexing | ✅ done |
-| 3. Retrieval | — |
-| 4. Chat | — |
+| 3. Retrieval | ✅ done |
+| 4. Chat | 🚧 answer engine and streaming API done, UI pending |
 | 5. Widget | — |
 | 6. Conversations, gaps, leads | — |
 | 7. Billing | — |
