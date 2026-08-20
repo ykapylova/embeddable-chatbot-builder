@@ -33,7 +33,37 @@ export async function findRelevantChunks(
     id: row.id,
     sourceId: row.sourceId,
     sourceTitle: row.sourceTitle,
+    sourceUrl: row.sourceUrl,
     content: row.content,
     score: row.score,
   }));
+}
+
+type TurnMessage = { role: "user" | "assistant"; content: string };
+
+/**
+ * Retrieval for a message inside a conversation.
+ *
+ * "How long do I have?" carries almost no meaning on its own, so embedding it
+ * alone returns nothing and the bot claims not to know something it just said.
+ * The second pass prepends the previous question, which is what the visitor
+ * would have written had they not been mid-conversation.
+ *
+ * It runs only when the first pass found nothing, so a self-contained question
+ * costs exactly one embedding and can never be diluted by an unrelated earlier
+ * turn.
+ */
+export async function findRelevantChunksForTurn(
+  botId: string,
+  question: string,
+  history: TurnMessage[],
+  limit: number = DEFAULT_LIMIT,
+): Promise<RetrievedChunk[]> {
+  const direct = await findRelevantChunks(botId, question, limit);
+  if (direct.length > 0) return direct;
+
+  const previousQuestion = history.findLast((message) => message.role === "user")?.content;
+  if (!previousQuestion) return direct;
+
+  return findRelevantChunks(botId, `${previousQuestion}\n${question}`, limit);
 }

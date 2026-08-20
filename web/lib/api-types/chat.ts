@@ -25,5 +25,9 @@ export type ChatUsage = {
 export type ChatStreamEvent =
   | { type: "start"; conversationId: string; citations: ChatCitation[] }
   | { type: "delta"; text: string }
-  | { type: "done"; answered: boolean; usage: ChatUsage }
+  /**
+   * `start` carries every retrieved source so citations can be shown while the
+   * answer streams; `done` narrows that to the ones the finished answer cited.
+   */
+  | { type: "done"; answered: boolean; usage: ChatUsage; citations: ChatCitation[] }
   | { type: "error"; code: string; message: string };

@@ -10,9 +10,10 @@ import type { AnswerEvent, AnswerProvider, AnswerRequest } from "./types";
 /**
  * Runs the same assertions against whichever provider it is handed. If a
  * behaviour needs a special case per provider, the interface has already
- * leaked — see DEV_PLAN.md §1. Uses Node's built-in test runner so this file
- * needs no extra dependency; run it with `node --test` once TS execution is
- * wired up (see the PR description).
+ * leaked — see DEV_PLAN.md §1. Uses Node's built-in test runner: `npm test`
+ * for the stub half, `npm run test:live` to include the real API — the live
+ * suite skips itself unless a key is in the environment, and `npm test` never
+ * loads `.env.local`, so the verification gate stays offline.
  */
 function contractTests(provider: AnswerProvider) {
   const baseRequest: AnswerRequest = {
