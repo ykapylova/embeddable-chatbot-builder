@@ -1,14 +1,17 @@
 "use client";
 
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Lock, MessageCircleQuestion } from "lucide-react";
 
 import { getGaps } from "lib/api-client";
+import { appPaths } from "lib/api-paths";
 import { queryKeys } from "lib/query-keys";
 import { GapRow } from "components/gaps/gap-row";
 import { ProPill } from "components/widget-settings/plan-pill";
-import { Button } from "components/ui/button";
+import { Button, buttonVariants } from "components/ui/button";
 import { StatCard } from "components/ui/stat-card";
+import { cn } from "lib/utils";
 
 export function GapsPanel({ botId }: { botId: string }) {
   const query = useQuery({
@@ -48,9 +51,16 @@ export function GapsPanel({ botId }: { botId: string }) {
             See what your bot can&apos;t answer <ProPill />
           </h2>
           <p className="mx-auto mt-1 max-w-md text-sm text-[var(--muted)]">
-            Upgrade to Pro to see the grouped list of questions, and turn each one into an FAQ in one
-            click.
+            Upgrade to Pro to see the grouped list of questions, turn each one into an FAQ in one
+            click, and collect a visitor&apos;s contact info the next time your bot can&apos;t help —
+            a customer&apos;s contact could have been here.
           </p>
+          <Link
+            href={`${appPaths.billing()}?reason=GAPS_LOCKED`}
+            className={cn(buttonVariants({ variant: "default" }), "mt-4 inline-flex")}
+          >
+            Upgrade plan
+          </Link>
         </div>
       </div>
     );

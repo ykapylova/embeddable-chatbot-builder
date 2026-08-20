@@ -1,4 +1,4 @@
-import type { ModelId, PlanId } from "lib/plans";
+import type { BillingInterval, ModelId, PlanId } from "lib/plans";
 
 /**
  * Machine codes a 402 can carry — see PROJECT_SPEC.md §10.5. The UI switches
@@ -32,4 +32,22 @@ export type PlanUsage = {
   gaps: "counter" | "full";
   historyDays: number;
   export: boolean;
+};
+
+/**
+ * What `GET /api/me/plan` actually returns: `PlanUsage` (T10/T11, unchanged —
+ * `server/services/plan.service.ts` is out of T12's territory) plus a
+ * `billing` block the route composes from the `subscriptions` table for the
+ * billing page. See PROJECT_SPEC.md §10.6.
+ */
+export type AccountPlan = PlanUsage & {
+  billing: {
+    /** False for an account that has never gone through Stripe checkout — hides the Portal button. */
+    hasBillingHistory: boolean;
+    interval: BillingInterval | null;
+    /** Date (YYYY-MM-DD) the current period ends, or `null` on Free. */
+    renewsOn: string | null;
+    cancelAtPeriodEnd: boolean;
+    paymentFailed: boolean;
+  };
 };

@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
 
 import { ApiError, updateBot } from "lib/api-client";
-import { planLimits } from "lib/plans";
+import { appPaths } from "lib/api-paths";
 import { queryKeys } from "lib/query-keys";
+import { usePlan } from "components/plan/use-plan";
 import { Button } from "components/ui/button";
 import { Input } from "components/ui/input";
 import { ProPill } from "components/widget-settings/plan-pill";
@@ -29,17 +31,12 @@ function validateDomain(raw: string, existing: string[]): string | null {
   return null;
 }
 
-/**
- * There is no endpoint yet that reports the account's real plan (billing is
- * later phases), so — same workaround as `KnowledgeCharUsage` — Free is the
- * honest assumption until one exists.
- */
-const assumedPlanLimits = planLimits("free");
-
 export function DomainListEditor({ botId, domains }: { botId: string; domains: string[] }) {
   const queryClient = useQueryClient();
+  const { plan } = usePlan();
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | undefined>(undefined);
 
   const mutation = useMutation({
     mutationFn: (nextDomains: string[]) => updateBot(botId, { allowedDomains: nextDomains }),
@@ -49,24 +46,31 @@ export function DomainListEditor({ botId, domains }: { botId: string; domains: s
     },
   });
 
-  const atLimit = domains.length >= assumedPlanLimits.domains;
-  const limitLabel = Number.isFinite(assumedPlanLimits.domains) ? String(assumedPlanLimits.domains) : "∞";
+  const domainLimit = plan?.domains.limit ?? null;
+  const atLimit = domainLimit !== null && domains.length >= domainLimit;
+  const limitLabel = domainLimit === null ? "∞" : String(domainLimit);
 
   function handleAdd() {
     const validationError = validateDomain(value, domains);
     if (validationError) {
       setError(validationError);
+      setErrorCode(undefined);
       return;
     }
     setError(null);
+    setErrorCode(undefined);
     mutation.mutate([...domains, normalizeDomain(value)], {
       onSuccess: () => setValue(""),
-      onError: (err) => setError(err instanceof ApiError ? err.message : "Could not add domain"),
+      onError: (err) => {
+        setError(err instanceof ApiError ? err.message : "Could not add domain");
+        setErrorCode(err instanceof ApiError ? err.code : undefined);
+      },
     });
   }
 
   function handleRemove(domain: string) {
     setError(null);
+    setErrorCode(undefined);
     mutation.mutate(
       domains.filter((d) => d !== domain),
       { onError: (err) => setError(err instanceof ApiError ? err.message : "Could not remove domain") },
@@ -127,7 +131,19 @@ export function DomainListEditor({ botId, domains }: { botId: string; domains: s
           Add
         </Button>
       </div>
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      {error ? (
+        <p className="text-sm text-red-600">
+          {error}
+          {errorCode === "LIMIT_DOMAINS" ? (
+            <>
+              {" "}
+              <Link href={`${appPaths.billing()}?reason=LIMIT_DOMAINS`} className="underline underline-offset-2">
+                Upgrade plan
+              </Link>
+            </>
+          ) : null}
+        </p>
+      ) : null}
     </div>
   );
 }

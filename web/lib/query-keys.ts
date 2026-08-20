@@ -23,4 +23,8 @@ export const queryKeys = {
   plan: {
     self: ["plan"] as const,
   },
+  billing: {
+    plans: ["billing", "plans"] as const,
+    sessionStatus: (sessionId: string) => ["billing", "session-status", sessionId] as const,
+  },
 } as const;

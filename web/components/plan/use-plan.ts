@@ -23,5 +23,6 @@ export function usePlan() {
     isPlanResolved: query.isSuccess,
     isLoading: query.isPending,
     error: query.isError ? (query.error instanceof Error ? query.error.message : "Could not load plan") : null,
+    refetch: query.refetch,
   };
 }
