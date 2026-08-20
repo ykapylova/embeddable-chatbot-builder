@@ -7,6 +7,10 @@ export const apiPaths = {
     `/api/bots/${botId}/sources/${sourceId}/reindex`,
   retrievalDebug: (botId: string) => `/api/bots/${botId}/retrieval/debug`,
   chat: (botId: string) => `/api/bots/${botId}/chat`,
+  conversations: (botId: string) => `/api/bots/${botId}/conversations`,
+  conversationsUsage: (botId: string) => `/api/bots/${botId}/conversations/usage`,
+  conversation: (botId: string, conversationId: string) =>
+    `/api/bots/${botId}/conversations/${conversationId}`,
 } as const;
 
 export const appPaths = {
@@ -16,4 +20,7 @@ export const appPaths = {
   botKnowledge: (botId: string) => `/bots/${botId}/knowledge`,
   botAppearance: (botId: string) => `/bots/${botId}/appearance`,
   botInstall: (botId: string) => `/bots/${botId}/install`,
+  botConversations: (botId: string) => `/bots/${botId}/conversations`,
+  botConversation: (botId: string, conversationId: string) =>
+    `/bots/${botId}/conversations/${conversationId}`,
 } as const;

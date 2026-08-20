@@ -1,5 +1,11 @@
 import type { Bot, BotListItem, CreateBotBody, UpdateBotBody } from "lib/api-types/bot";
 import type { ChatTurnRequest } from "lib/api-types/chat";
+import type {
+  ConversationListFilter,
+  ConversationListResponse,
+  ConversationTranscript,
+  ConversationUsageSummary,
+} from "lib/api-types/conversation";
 import type { RetrievalDebugResponse } from "lib/api-types/retrieval";
 import type { CreateJsonSourceBody, Source } from "lib/api-types/source";
 import { apiPaths } from "./api-paths";
@@ -130,6 +136,31 @@ export function deleteSource(botId: string, sourceId: string): Promise<void> {
 
 export function reindexSource(botId: string, sourceId: string): Promise<Source> {
   return request<Source>(apiPaths.sourceReindex(botId, sourceId), { method: "POST" });
+}
+
+export function getConversations(
+  botId: string,
+  filter: ConversationListFilter,
+  cursor: string | null,
+): Promise<ConversationListResponse> {
+  const params = new URLSearchParams();
+  if (filter.channel) params.set("channel", filter.channel);
+  if (filter.ratedDown) params.set("rated", "down");
+  if (filter.unresolved) params.set("unresolved", "true");
+  if (cursor) params.set("cursor", cursor);
+  const qs = params.toString();
+  return request<ConversationListResponse>(`${apiPaths.conversations(botId)}${qs ? `?${qs}` : ""}`);
+}
+
+export function getConversationUsage(botId: string): Promise<ConversationUsageSummary> {
+  return request<ConversationUsageSummary>(apiPaths.conversationsUsage(botId));
+}
+
+export function getConversationTranscript(
+  botId: string,
+  conversationId: string,
+): Promise<ConversationTranscript> {
+  return request<ConversationTranscript>(apiPaths.conversation(botId, conversationId));
 }
 
 /**
