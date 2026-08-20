@@ -1,4 +1,5 @@
 import type { Bot, BotListItem, CreateBotBody, UpdateBotBody } from "lib/api-types/bot";
+import type { RetrievalDebugResponse } from "lib/api-types/retrieval";
 import { apiPaths } from "./api-paths";
 
 const jsonHeaders = { "Content-Type": "application/json" };
@@ -95,4 +96,12 @@ export function updateBot(botId: string, body: UpdateBotBody): Promise<Bot> {
 
 export function deleteBot(botId: string): Promise<void> {
   return requestAck(apiPaths.bot(botId), { method: "DELETE" });
+}
+
+export function debugRetrieval(botId: string, question: string): Promise<RetrievalDebugResponse> {
+  return request<RetrievalDebugResponse>(apiPaths.retrievalDebug(botId), {
+    method: "POST",
+    headers: jsonHeaders,
+    body: JSON.stringify({ question }),
+  });
 }
