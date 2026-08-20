@@ -25,11 +25,13 @@ export function InstallSnippet({ publicKey }: { publicKey: string }) {
       <Button type="button" variant="outline" size="sm" onClick={handleCopy}>
         {copied ? (
           <>
-            <Check className="h-4 w-4" /> Copied
+            <Check className="h-4 w-4" />
+            Copied
           </>
         ) : (
           <>
-            <Copy className="h-4 w-4" /> Copy snippet
+            <Copy className="h-4 w-4" />
+            Copy snippet
           </>
         )}
       </Button>

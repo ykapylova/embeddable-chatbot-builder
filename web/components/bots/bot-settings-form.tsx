@@ -142,8 +142,8 @@ export function BotSettingsForm({ botId }: { botId: string }) {
                 onClick={() => patch({ tone: tone.value })}
                 className={
                   form.tone === tone.value
-                    ? "rounded-xl border border-[var(--accent)] bg-[var(--accent)] px-3 py-1.5 text-sm text-white"
-                    : "rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-1.5 text-sm transition hover:bg-[var(--panel-soft)]"
+                    ? "rounded-xl border border-[var(--accent)] bg-[var(--accent)] px-3 py-1.5 text-[11px] text-white"
+                    : "rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-1.5 text-[11px] transition hover:bg-[var(--panel-soft)]"
                 }
                 title={tone.hint}
               >
@@ -182,7 +182,7 @@ export function BotSettingsForm({ botId }: { botId: string }) {
             rows={4}
             placeholder="You are the support assistant for Acme, a project management tool for design teams."
             onChange={(event) => patch({ systemPrompt: event.target.value })}
-            className="w-full rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-2 text-sm outline-none transition focus:border-[#c9d0dd]"
+            className="w-full rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-2 text-xs outline-none transition focus:border-[#c9d0dd]"
           />
         </Field>
 
@@ -248,7 +248,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-sm font-medium">{label}</span>
+      <span className="mb-1.5 block text-xs font-medium">{label}</span>
       {children}
       {hint ? <span className="mt-1.5 block text-xs text-[var(--muted)]">{hint}</span> : null}
     </label>

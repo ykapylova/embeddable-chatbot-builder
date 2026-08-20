@@ -40,7 +40,7 @@ export function InstallSettings({ botId }: { botId: string }) {
   return (
     <div className="max-w-xl space-y-8">
       <section>
-        <h2 className="text-sm font-medium">Embed snippet</h2>
+        <h2 className="text-xs font-medium">Embed snippet</h2>
         <p className="mt-1 text-sm text-[var(--muted)]">
           Paste this right before <code>&lt;/body&gt;</code> on any page you want the widget on.
         </p>
@@ -48,7 +48,7 @@ export function InstallSettings({ botId }: { botId: string }) {
       </section>
 
       <section>
-        <h2 className="text-sm font-medium">Allowed domains</h2>
+        <h2 className="text-xs font-medium">Allowed domains</h2>
         <p className="mt-1 text-sm text-[var(--muted)]">
           Only pages on these domains can load the widget with this key — this is what stops anyone
           who finds the snippet from embedding your bot on a site you do not own.
@@ -57,7 +57,7 @@ export function InstallSettings({ botId }: { botId: string }) {
       </section>
 
       <section className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-4">
-        <h2 className="text-sm font-medium">Test it</h2>
+        <h2 className="text-xs font-medium">Test it</h2>
         <p className="mt-1 text-sm text-[var(--muted)]">
           Add a domain above, paste the snippet into a page on that domain, then reload it — a chat
           bubble appears in the corner set on the{" "}

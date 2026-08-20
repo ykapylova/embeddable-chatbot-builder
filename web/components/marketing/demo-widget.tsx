@@ -116,11 +116,11 @@ function ChatPanel({ onClose }: { onClose: () => void }) {
         <input
           disabled
           placeholder="This box goes live once the widget ships"
-          className="flex-1 rounded-xl border border-[var(--border)] bg-[var(--panel-soft)] px-3 py-2 text-sm text-[var(--muted)] placeholder:text-[var(--muted)]"
+          className="flex-1 rounded-xl border border-[var(--border)] bg-[var(--panel-soft)] px-3 py-2 text-xs text-[var(--muted)] placeholder:text-[var(--muted)]"
         />
         <button
           disabled
-          className="rounded-xl bg-[var(--panel-soft)] px-3 py-2 text-sm text-[var(--muted)]"
+          className="rounded-xl bg-[var(--panel-soft)] px-3 py-2 text-xs text-[var(--muted)]"
         >
           Send
         </button>

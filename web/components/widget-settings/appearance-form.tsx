@@ -140,7 +140,7 @@ export function AppearanceForm({ botId }: { botId: string }) {
               className="h-9 w-14 cursor-pointer rounded-xl border border-[var(--border)] bg-[var(--panel)] p-1"
               aria-label="Accent colour"
             />
-            <span className="text-sm text-[var(--muted)]">{form.accentColor}</span>
+            <span className="text-xs text-[var(--muted)]">{form.accentColor}</span>
           </div>
         </Field>
 
@@ -153,8 +153,8 @@ export function AppearanceForm({ botId }: { botId: string }) {
                 onClick={() => patch({ position: option.value })}
                 className={
                   form.position === option.value
-                    ? "rounded-xl border border-[var(--accent)] bg-[var(--accent)] px-3 py-1.5 text-sm text-white"
-                    : "rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-1.5 text-sm transition hover:bg-[var(--panel-soft)]"
+                    ? "rounded-xl border border-[var(--accent)] bg-[var(--accent)] px-3 py-1.5 text-[11px] text-white"
+                    : "rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-1.5 text-[11px] transition hover:bg-[var(--panel-soft)]"
                 }
               >
                 {option.label}
@@ -261,7 +261,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-sm font-medium">{label}</span>
+      <span className="mb-1.5 block text-xs font-medium">{label}</span>
       {children}
       {hint ? <span className="mt-1.5 block text-xs text-[var(--muted)]">{hint}</span> : null}
     </label>

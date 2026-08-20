@@ -57,7 +57,7 @@ export function BotsDashboard() {
 
         {!isCreating && bots.data && bots.data.length > 0 ? (
           <Button onClick={() => setIsCreating(true)}>
-            <Plus className="mr-1.5 h-4 w-4" />
+            <Plus className="h-4 w-4" />
             New bot
           </Button>
         ) : null}
@@ -139,7 +139,7 @@ export function BotsDashboard() {
             Create a bot, upload your docs, and embed it on your site.
           </p>
           <Button className="mt-4" onClick={() => setIsCreating(true)}>
-            <Plus className="mr-1.5 h-4 w-4" />
+            <Plus className="h-4 w-4" />
             Create your first bot
           </Button>
         </Card>
