@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 
 import type { Source } from "lib/api-types/source";
+import type { PlanId } from "lib/plans";
 import { botRepository } from "server/repositories/bot.repository";
 import { sourceRepository, type SourceRow } from "server/repositories/source.repository";
 import {
@@ -14,6 +15,7 @@ import {
   SOURCE_TEXT_MAX_CHARS,
   SOURCE_TITLE_MAX,
 } from "server/limits";
+import { assertPlan } from "server/services/plan.service";
 import { uploadBytesToChatBucket } from "server/services/supabase-storage.service";
 
 import { SourceContentError, SourceValidationError } from "./errors";
@@ -156,11 +158,12 @@ export const sourceService = {
     return rows.map(toSource);
   },
 
-  async create(botId: string, accountId: string, input: unknown): Promise<Source | null> {
+  async create(botId: string, accountId: string, plan: PlanId, input: unknown): Promise<Source | null> {
     const bot = await requireOwnedBot(botId, accountId);
     if (!bot) return null;
 
     const parsed = createJsonSourceSchema.parse(input);
+    await assertPlan({ type: "sources", botId, plan });
 
     if (parsed.type === "url") {
       return createAndProcess(
@@ -190,9 +193,16 @@ export const sourceService = {
     );
   },
 
-  async createFromFile(botId: string, accountId: string, formData: FormData): Promise<Source | null> {
+  async createFromFile(
+    botId: string,
+    accountId: string,
+    plan: PlanId,
+    formData: FormData,
+  ): Promise<Source | null> {
     const bot = await requireOwnedBot(botId, accountId);
     if (!bot) return null;
+
+    await assertPlan({ type: "sources", botId, plan });
 
     const file = formData.get("file");
     if (!(file instanceof File)) {

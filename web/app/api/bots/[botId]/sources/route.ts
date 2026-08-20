@@ -3,6 +3,7 @@ import { ZodError } from "zod";
 
 import { requireAccount, unwrapAccount } from "server/auth/require-account";
 import { jsonErr, jsonOk } from "server/http/json-api";
+import { PlanLimitError } from "server/services/plan.service";
 import { SourceValidationError, sourceService } from "server/services/sources/source.service";
 
 export const runtime = "nodejs";
@@ -37,7 +38,12 @@ export async function POST(request: Request, context: RouteContext): Promise<Nex
   try {
     if (contentType.includes("multipart/form-data")) {
       const formData = await request.formData();
-      const source = await sourceService.createFromFile(botId, result.account.id, formData);
+      const source = await sourceService.createFromFile(
+        botId,
+        result.account.id,
+        result.account.plan,
+        formData,
+      );
       if (!source) return jsonErr("Bot not found", 404);
       return jsonOk(source, { status: 201 });
     }
@@ -49,12 +55,15 @@ export async function POST(request: Request, context: RouteContext): Promise<Nex
       return jsonErr("Invalid JSON body", 400);
     }
 
-    const source = await sourceService.create(botId, result.account.id, body);
+    const source = await sourceService.create(botId, result.account.id, result.account.plan, body);
     if (!source) return jsonErr("Bot not found", 404);
     return jsonOk(source, { status: 201 });
   } catch (error) {
     if (error instanceof ZodError) {
       return jsonErr(error.issues[0]?.message ?? "Invalid payload", 422);
+    }
+    if (error instanceof PlanLimitError) {
+      return jsonErr(error.message, 402, { code: error.code });
     }
     if (error instanceof SourceValidationError) {
       return jsonErr(error.message, 422);

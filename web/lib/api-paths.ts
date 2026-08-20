@@ -14,6 +14,7 @@ export const apiPaths = {
   gaps: (botId: string) => `/api/bots/${botId}/gaps`,
   leads: (botId: string) => `/api/bots/${botId}/leads`,
   leadsExport: (botId: string) => `/api/bots/${botId}/leads/export`,
+  mePlan: () => "/api/me/plan",
 } as const;
 
 export const appPaths = {
