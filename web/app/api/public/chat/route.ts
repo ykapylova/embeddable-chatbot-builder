@@ -6,6 +6,7 @@ import { botRepository } from "server/repositories/bot.repository";
 import { conversationRepository } from "server/repositories/conversation.repository";
 import { jsonErr } from "server/http/json-api";
 import { getAnswerProvider, usedCitations, type AnswerHistoryMessage, type RetrievedChunk } from "server/services/answer";
+import { CREDIT_LIMIT_MESSAGE, chargeForAnswer, refundForAnswer } from "server/services/plan.service";
 import { corsHeaders, corsPreflight, withCors } from "server/services/widget/cors";
 import {
   countConversationMessages,
@@ -121,9 +122,8 @@ export async function POST(request: Request): Promise<Response> {
     content: row.content,
   }));
 
-  // The quota check belongs here, before the model is ever called, so a
-  // stream never dies mid-answer — but plan credits are not tracked yet
-  // (T10). Model selection still respects the plan's allowed models.
+  // The quota check happens inside the stream below, before the model is
+  // ever called, so a stream never dies mid-answer.
   const plan = (await getAccountPlan(bot.accountId)) ?? "free";
   const model = planLimits(plan).models[0];
   const provider = getAnswerProvider();
@@ -138,6 +138,7 @@ export async function POST(request: Request): Promise<Response> {
       let usage = { tokens: 0, credits: 0 };
       let errored = false;
       let closed = false;
+      let charged = false;
 
       const send = (event: ChatStreamEvent) => {
         if (closed) return;
@@ -156,34 +157,55 @@ export async function POST(request: Request): Promise<Response> {
       try {
         const chunks: RetrievedChunk[] = await findRelevantChunksForTurn(bot.id, payload.message, history);
 
-        for await (const event of provider.answer({
-          question: payload.message,
-          history,
-          chunks,
-          model,
-          botInstruction: bot.systemPrompt,
-          tone: bot.tone,
-          fallbackMessage: bot.fallbackMessage,
-        })) {
-          if (request.signal.aborted) break;
+        // An empty retrieval result is always a free, canned fallback — see
+        // the answer provider. Only a real model call needs a credit, so the
+        // atomic charge happens here, before the model is ever invoked.
+        const willCost = chunks.length > 0;
+        if (willCost) {
+          charged = await chargeForAnswer(bot.accountId, plan, model);
+        }
 
-          if (event.type === "start") {
-            citations = toChatCitations(event.citations);
-            send({ type: "start", conversationId: conversation.id, citations });
-          } else if (event.type === "delta") {
-            assistantText += event.text;
-            send(event);
-          } else if (event.type === "done") {
-            answered = event.answered;
-            usage = event.usage;
-            keptCitations = usedCitations(assistantText, citations);
-            send({ ...event, citations: keptCitations });
-          } else {
-            errored = true;
-            send(event);
+        if (willCost && !charged) {
+          // Free: this *is* the placeholder. Pro/Business: the 10% grace
+          // buffer (applied inside chargeForAnswer) has also run out — same
+          // contact-collection behaviour either way. The widget must never go
+          // silent (PROJECT_SPEC.md §10.4).
+          send({ type: "start", conversationId: conversation.id, citations: [] });
+          assistantText = CREDIT_LIMIT_MESSAGE;
+          send({ type: "delta", text: assistantText });
+          usage = { tokens: 0, credits: 0 };
+          keptCitations = [];
+          send({ type: "done", answered: false, usage, citations: [] });
+        } else {
+          for await (const event of provider.answer({
+            question: payload.message,
+            history,
+            chunks,
+            model,
+            botInstruction: bot.systemPrompt,
+            tone: bot.tone,
+            fallbackMessage: bot.fallbackMessage,
+          })) {
+            if (request.signal.aborted) break;
+
+            if (event.type === "start") {
+              citations = toChatCitations(event.citations);
+              send({ type: "start", conversationId: conversation.id, citations });
+            } else if (event.type === "delta") {
+              assistantText += event.text;
+              send(event);
+            } else if (event.type === "done") {
+              answered = event.answered;
+              usage = event.usage;
+              keptCitations = usedCitations(assistantText, citations);
+              send({ ...event, citations: keptCitations });
+            } else {
+              errored = true;
+              send(event);
+            }
+
+            if (request.signal.aborted) break;
           }
-
-          if (request.signal.aborted) break;
         }
       } catch (error) {
         console.error("[POST /api/public/chat]", error);
@@ -195,6 +217,12 @@ export async function POST(request: Request): Promise<Response> {
         });
       } finally {
         request.signal.removeEventListener("abort", onAbort);
+
+        // A charge that never turned into a delivered answer costs the
+        // customer nothing.
+        if (charged && !answered) {
+          await refundForAnswer(bot.accountId, model);
+        }
 
         // Same pairing rule as the owner endpoint: both messages are written
         // together, at the end, and only if something was actually said.

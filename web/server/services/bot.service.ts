@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { z, ZodError } from "zod";
+import { z } from "zod";
 
 import type { Bot, BotListItem } from "lib/api-types/bot";
 import {
@@ -10,8 +10,9 @@ import {
   BOT_TONES,
   THEME_PLACEHOLDER_MAX,
 } from "lib/bot-defaults";
-import { planLimits, type PlanId } from "lib/plans";
+import type { PlanId } from "lib/plans";
 import { botRepository, type BotRow } from "server/repositories/bot.repository";
+import { assertPlan } from "server/services/plan.service";
 
 const toneValues = BOT_TONES.map((t) => t.value) as [string, ...string[]];
 
@@ -133,8 +134,9 @@ export const botService = {
     return row ? toBot(row) : null;
   },
 
-  async create(accountId: string, input: unknown): Promise<Bot> {
+  async create(accountId: string, plan: PlanId, input: unknown): Promise<Bot> {
     const { name } = createBotSchema.parse(input);
+    await assertPlan({ type: "bots", accountId, plan });
 
     const row = await botRepository.create({
       accountId,
@@ -150,28 +152,15 @@ export const botService = {
 
   async update(botId: string, accountId: string, input: unknown, plan: PlanId): Promise<Bot | null> {
     const patch = updateBotSchema.parse(input);
-    const limits = planLimits(plan);
 
     // Gating lives here, not only in the form: a Free account calling the API
     // directly must not be able to remove branding or exceed its domain quota.
-    if (patch.allowedDomains && patch.allowedDomains.length > limits.domains) {
-      throw new ZodError([
-        {
-          code: z.ZodIssueCode.custom,
-          path: ["allowedDomains"],
-          message: `Your plan allows up to ${limits.domains} domain${limits.domains === 1 ? "" : "s"}`,
-        },
-      ]);
+    if (patch.allowedDomains) {
+      await assertPlan({ type: "domains", plan, requestedDomainCount: patch.allowedDomains.length });
     }
 
-    if (patch.brandingEnabled === false && limits.branding) {
-      throw new ZodError([
-        {
-          code: z.ZodIssueCode.custom,
-          path: ["brandingEnabled"],
-          message: 'Removing the "Powered by" badge requires a Pro plan',
-        },
-      ]);
+    if (patch.brandingEnabled === false) {
+      await assertPlan({ type: "branding", plan });
     }
 
     const row = await botRepository.update(botId, accountId, {

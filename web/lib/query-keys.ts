@@ -20,4 +20,7 @@ export const queryKeys = {
   leads: {
     list: (botId: string) => ["leads", botId] as const,
   },
+  plan: {
+    self: ["plan"] as const,
+  },
 } as const;

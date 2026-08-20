@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 
 import { requireAccount, unwrapAccount } from "server/auth/require-account";
 import { jsonErr } from "server/http/json-api";
-import { LeadExportNotAllowedError, leadService } from "server/services/lead.service";
+import { leadService } from "server/services/lead.service";
+import { PlanLimitError } from "server/services/plan.service";
 
 export const runtime = "nodejs";
 
@@ -26,8 +27,8 @@ export async function GET(_request: Request, context: RouteContext): Promise<Nex
       },
     });
   } catch (error) {
-    if (error instanceof LeadExportNotAllowedError) {
-      return jsonErr(error.message, 403, { code: "PLAN_LIMIT" });
+    if (error instanceof PlanLimitError) {
+      return jsonErr(error.message, 402, { code: error.code });
     }
     throw error;
   }

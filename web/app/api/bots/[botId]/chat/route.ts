@@ -7,6 +7,7 @@ import { jsonErr } from "server/http/json-api";
 import { botRepository } from "server/repositories/bot.repository";
 import { conversationRepository } from "server/repositories/conversation.repository";
 import { getAnswerProvider, usedCitations, type AnswerHistoryMessage, type RetrievedChunk } from "server/services/answer";
+import { CREDIT_LIMIT_MESSAGE, chargeForAnswer, refundForAnswer } from "server/services/plan.service";
 import { findRelevantChunksForTurn } from "server/services/retrieval.service";
 
 export const runtime = "nodejs";
@@ -83,6 +84,7 @@ export async function POST(request: Request, context: RouteContext): Promise<Res
       let usage = { tokens: 0, credits: 0 };
       let errored: { code: string; message: string } | null = null;
       let closed = false;
+      let charged = false;
 
       const send = (event: ChatStreamEvent) => {
         if (closed) return;
@@ -105,38 +107,57 @@ export async function POST(request: Request, context: RouteContext): Promise<Res
           history,
         );
 
-        for await (const event of provider.answer({
-          question: payload.message,
-          history,
-          chunks,
-          model,
-          botInstruction: bot.systemPrompt,
-          tone: bot.tone,
-          fallbackMessage: bot.fallbackMessage,
-        })) {
-          if (request.signal.aborted) break;
+        // Retrieval already tells us whether this turn will call the model at
+        // all — an empty result is always a free, canned fallback (see the
+        // answer provider). Only a real model call needs a credit, so the
+        // atomic charge happens here, before the model is ever invoked: a
+        // stream must not die mid-answer because a plan limit was hit.
+        const willCost = chunks.length > 0;
+        if (willCost) {
+          charged = await chargeForAnswer(account.id, account.plan, model);
+        }
 
-          if (event.type === "start") {
-            citations = toChatCitations(event.citations);
-            send({ type: "start", conversationId: conversation.id, citations });
-          } else if (event.type === "delta") {
-            assistantText += event.text;
-            send(event);
-          } else if (event.type === "done") {
-            answered = event.answered;
-            usage = event.usage;
-            // The client showed every retrieved source while the answer was
-            // still streaming; now that the text is complete, tell it which
-            // ones the answer actually leaned on. Same list that gets stored,
-            // so the playground and the transcript cannot disagree.
-            keptCitations = usedCitations(assistantText, citations);
-            send({ ...event, citations: keptCitations });
-          } else {
-            errored = { code: event.code, message: event.message };
-            send(event);
+        if (willCost && !charged) {
+          send({ type: "start", conversationId: conversation.id, citations: [] });
+          assistantText = CREDIT_LIMIT_MESSAGE;
+          send({ type: "delta", text: assistantText });
+          usage = { tokens: 0, credits: 0 };
+          keptCitations = [];
+          send({ type: "done", answered: false, usage, citations: [] });
+        } else {
+          for await (const event of provider.answer({
+            question: payload.message,
+            history,
+            chunks,
+            model,
+            botInstruction: bot.systemPrompt,
+            tone: bot.tone,
+            fallbackMessage: bot.fallbackMessage,
+          })) {
+            if (request.signal.aborted) break;
+
+            if (event.type === "start") {
+              citations = toChatCitations(event.citations);
+              send({ type: "start", conversationId: conversation.id, citations });
+            } else if (event.type === "delta") {
+              assistantText += event.text;
+              send(event);
+            } else if (event.type === "done") {
+              answered = event.answered;
+              usage = event.usage;
+              // The client showed every retrieved source while the answer was
+              // still streaming; now that the text is complete, tell it which
+              // ones the answer actually leaned on. Same list that gets stored,
+              // so the playground and the transcript cannot disagree.
+              keptCitations = usedCitations(assistantText, citations);
+              send({ ...event, citations: keptCitations });
+            } else {
+              errored = { code: event.code, message: event.message };
+              send(event);
+            }
+
+            if (request.signal.aborted) break;
           }
-
-          if (request.signal.aborted) break;
         }
       } catch (error) {
         console.error("[POST /api/bots/:botId/chat]", error);
@@ -144,6 +165,12 @@ export async function POST(request: Request, context: RouteContext): Promise<Res
         send({ type: "error", ...errored });
       } finally {
         request.signal.removeEventListener("abort", onAbort);
+
+        // A charge that never turned into a delivered answer (an error, or the
+        // visitor disconnecting mid-stream) costs the customer nothing.
+        if (charged && !answered) {
+          await refundForAnswer(account.id, model);
+        }
 
         // Both messages are written here, at the end, and only as a pair.
         // Storing the question up front looked safer but left a question with

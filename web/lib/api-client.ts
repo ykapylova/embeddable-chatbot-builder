@@ -8,6 +8,7 @@ import type {
 } from "lib/api-types/conversation";
 import type { GapsResponse } from "lib/api-types/gaps";
 import type { LeadListResponse } from "lib/api-types/leads";
+import type { PlanUsage } from "lib/api-types/plan";
 import type { RetrievalDebugResponse } from "lib/api-types/retrieval";
 import type { CreateJsonSourceBody, Source } from "lib/api-types/source";
 import { apiPaths } from "./api-paths";
@@ -209,4 +210,8 @@ export async function postChatTurn(
     throw await readApiError(res);
   }
   return res;
+}
+
+export function getPlan(): Promise<PlanUsage> {
+  return request<PlanUsage>(apiPaths.mePlan());
 }

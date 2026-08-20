@@ -4,6 +4,7 @@ import { ZodError } from "zod";
 import { requireAccount, unwrapAccount } from "server/auth/require-account";
 import { jsonAck, jsonErr, jsonOk } from "server/http/json-api";
 import { botService } from "server/services/bot.service";
+import { PlanLimitError } from "server/services/plan.service";
 
 export const runtime = "nodejs";
 
@@ -51,6 +52,9 @@ export async function PATCH(request: Request, context: RouteContext): Promise<Ne
   } catch (error) {
     if (error instanceof ZodError) {
       return jsonErr(error.issues[0]?.message ?? "Invalid payload", 422);
+    }
+    if (error instanceof PlanLimitError) {
+      return jsonErr(error.message, 402, { code: error.code });
     }
     console.error("[PATCH /api/bots/:botId]", error);
     return jsonErr("Could not update bot", 500);

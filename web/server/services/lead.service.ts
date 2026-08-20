@@ -1,11 +1,10 @@
 import type { LeadListItem, LeadListResponse } from "lib/api-types/leads";
-import { planLimits, type PlanId } from "lib/plans";
+import type { PlanId } from "lib/plans";
 import { botRepository } from "server/repositories/bot.repository";
 import { leadRepository, type LeadCursor, type LeadRow } from "server/repositories/lead.repository";
+import { assertPlan } from "server/services/plan.service";
 
 const PAGE_SIZE = 20;
-
-export class LeadExportNotAllowedError extends Error {}
 
 function encodeCursor(row: Pick<LeadRow, "createdAt" | "id">): string {
   return Buffer.from(`${row.createdAt}|${row.id}`, "utf8").toString("base64url");
@@ -62,15 +61,13 @@ export const leadService = {
     };
   },
 
-  /** Returns null for an unowned/missing bot, throws for a plan that can't export —
-   * the two failure modes need different HTTP statuses at the route layer. */
+  /** Returns null for an unowned/missing bot, throws `PlanLimitError` for a plan that
+   * can't export — the two failure modes need different HTTP statuses at the route layer. */
   async exportCsv(botId: string, accountId: string, plan: PlanId): Promise<string | null> {
     const bot = await botRepository.findOwned(botId, accountId);
     if (!bot) return null;
 
-    if (!planLimits(plan).export) {
-      throw new LeadExportNotAllowedError("CSV export requires a Pro plan.");
-    }
+    await assertPlan({ type: "export", plan });
 
     const rows = await leadRepository.listAllForExport(botId);
     return toCsv(rows);
