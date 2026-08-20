@@ -1,4 +1,4 @@
-import { ConversationsPage } from "components/conversations/conversations-page";
+import { ConversationsGapsTabs } from "./conversations-gaps-tabs";
 
 export const metadata = { title: "Conversations — Docsy" };
 
@@ -8,5 +8,5 @@ export default async function BotConversationsPage({
   params: Promise<{ botId: string }>;
 }) {
   const { botId } = await params;
-  return <ConversationsPage botId={botId} />;
+  return <ConversationsGapsTabs botId={botId} />;
 }

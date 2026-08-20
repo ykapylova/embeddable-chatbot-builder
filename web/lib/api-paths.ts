@@ -11,6 +11,9 @@ export const apiPaths = {
   conversationsUsage: (botId: string) => `/api/bots/${botId}/conversations/usage`,
   conversation: (botId: string, conversationId: string) =>
     `/api/bots/${botId}/conversations/${conversationId}`,
+  gaps: (botId: string) => `/api/bots/${botId}/gaps`,
+  leads: (botId: string) => `/api/bots/${botId}/leads`,
+  leadsExport: (botId: string) => `/api/bots/${botId}/leads/export`,
 } as const;
 
 export const appPaths = {
@@ -23,4 +26,5 @@ export const appPaths = {
   botConversations: (botId: string) => `/bots/${botId}/conversations`,
   botConversation: (botId: string, conversationId: string) =>
     `/bots/${botId}/conversations/${conversationId}`,
+  botLeads: (botId: string) => `/bots/${botId}/leads`,
 } as const;
