@@ -1,4 +1,5 @@
 import type { Bot, BotListItem, CreateBotBody, UpdateBotBody } from "lib/api-types/bot";
+import type { RetrievalDebugResponse } from "lib/api-types/retrieval";
 import type { CreateJsonSourceBody, Source } from "lib/api-types/source";
 import { apiPaths } from "./api-paths";
 
@@ -96,6 +97,14 @@ export function updateBot(botId: string, body: UpdateBotBody): Promise<Bot> {
 
 export function deleteBot(botId: string): Promise<void> {
   return requestAck(apiPaths.bot(botId), { method: "DELETE" });
+}
+
+export function debugRetrieval(botId: string, question: string): Promise<RetrievalDebugResponse> {
+  return request<RetrievalDebugResponse>(apiPaths.retrievalDebug(botId), {
+    method: "POST",
+    headers: jsonHeaders,
+    body: JSON.stringify({ question }),
+  });
 }
 
 export function getSources(botId: string): Promise<Source[]> {
