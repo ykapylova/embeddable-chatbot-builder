@@ -13,7 +13,7 @@ shows up in the dashboard as a gap in your documentation.
 | --- | --- |
 | 0. Bootstrap | ✅ done |
 | 1. Accounts and bots | ✅ done |
-| 2. Knowledge sources and indexing | 🚧 ingestion API done, UI pending |
+| 2. Knowledge sources and indexing | ✅ done |
 | 3. Retrieval | — |
 | 4. Chat | — |
 | 5. Widget | — |
