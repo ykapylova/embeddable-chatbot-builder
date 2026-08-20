@@ -94,7 +94,9 @@ web/
 | `npm run build` | Production build |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | `tsc --noEmit` |
-| `npm run verify` | lint + typecheck + build — the gate before every commit |
+| `npm test` | Provider contract tests against the stub — no network, no keys |
+| `npm run test:live` | The same tests against the real OpenAI API, using `.env.local` |
+| `npm run verify` | lint + typecheck + test + build — the gate before every commit |
 | `npm run db:generate` | Generate a migration from the schema |
 | `npm run db:migrate` | Apply migrations |
 

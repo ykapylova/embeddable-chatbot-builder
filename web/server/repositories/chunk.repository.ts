@@ -10,6 +10,7 @@ export type RelevantChunkRow = {
   id: string;
   sourceId: string;
   sourceTitle: string;
+  sourceUrl: string | null;
   content: string;
   score: number;
 };
@@ -39,6 +40,7 @@ export const chunkRepository = {
         id: chunksTable.id,
         sourceId: chunksTable.sourceId,
         sourceTitle: sourcesTable.title,
+        sourceUrl: sourcesTable.sourceUrl,
         content: chunksTable.content,
         score: similarity,
       })

@@ -7,7 +7,7 @@ import { jsonErr } from "server/http/json-api";
 import { botRepository } from "server/repositories/bot.repository";
 import { conversationRepository } from "server/repositories/conversation.repository";
 import { getAnswerProvider, usedCitations, type AnswerHistoryMessage, type RetrievedChunk } from "server/services/answer";
-import { findRelevantChunks } from "server/services/retrieval.service";
+import { findRelevantChunksForTurn } from "server/services/retrieval.service";
 
 export const runtime = "nodejs";
 
@@ -64,19 +64,11 @@ export async function POST(request: Request, context: RouteContext): Promise<Res
 
   if (!conversation) return jsonErr("Conversation not found", 404);
 
-  // History is loaded before the new user turn is stored, so it never
-  // duplicates the question that is about to be answered.
   const historyRows = await conversationRepository.recentMessages(conversation.id, HISTORY_LIMIT);
   const history: AnswerHistoryMessage[] = historyRows.map((row) => ({
     role: row.role,
     content: row.content,
   }));
-
-  await conversationRepository.appendMessage({
-    conversationId: conversation.id,
-    role: "user",
-    content: payload.message,
-  });
 
   const model = planLimits(account.plan).models[0];
   const provider = getAnswerProvider();
@@ -86,6 +78,7 @@ export async function POST(request: Request, context: RouteContext): Promise<Res
       const startedAt = Date.now();
       let assistantText = "";
       let citations: ChatCitation[] = [];
+      let keptCitations: ChatCitation[] | null = null;
       let answered = false;
       let usage = { tokens: 0, credits: 0 };
       let errored: { code: string; message: string } | null = null;
@@ -106,15 +99,11 @@ export async function POST(request: Request, context: RouteContext): Promise<Res
       request.signal.addEventListener("abort", onAbort);
 
       try {
-        const rawChunks = await findRelevantChunks(botId, payload.message);
-        const chunks: RetrievedChunk[] = rawChunks.map((chunk) => ({
-          id: chunk.id,
-          sourceId: chunk.sourceId,
-          sourceTitle: chunk.sourceTitle,
-          sourceUrl: null,
-          content: chunk.content,
-          score: chunk.score,
-        }));
+        const chunks: RetrievedChunk[] = await findRelevantChunksForTurn(
+          botId,
+          payload.message,
+          history,
+        );
 
         for await (const event of provider.answer({
           question: payload.message,
@@ -136,7 +125,12 @@ export async function POST(request: Request, context: RouteContext): Promise<Res
           } else if (event.type === "done") {
             answered = event.answered;
             usage = event.usage;
-            send(event);
+            // The client showed every retrieved source while the answer was
+            // still streaming; now that the text is complete, tell it which
+            // ones the answer actually leaned on. Same list that gets stored,
+            // so the playground and the transcript cannot disagree.
+            keptCitations = usedCitations(assistantText, citations);
+            send({ ...event, citations: keptCitations });
           } else {
             errored = { code: event.code, message: event.message };
             send(event);
@@ -151,16 +145,25 @@ export async function POST(request: Request, context: RouteContext): Promise<Res
       } finally {
         request.signal.removeEventListener("abort", onAbort);
 
-        // Persisted even on error or client disconnect: a half-written answer
-        // must not look like data loss to the user re-opening the conversation.
+        // Both messages are written here, at the end, and only as a pair.
+        // Storing the question up front looked safer but left a question with
+        // no answer whenever the visitor stopped the turn before the first
+        // token — and since Retry resends the same text, the transcript then
+        // showed them asking twice. A turn that produced nothing at all leaves
+        // nothing behind; a half-written answer is still kept, because that is
+        // data the visitor saw.
         if (assistantText || answered || errored) {
-          const keptCitations = usedCitations(assistantText, citations);
+          await conversationRepository.appendMessage({
+            conversationId: conversation.id,
+            role: "user",
+            content: payload.message,
+          });
 
           await conversationRepository.appendMessage({
             conversationId: conversation.id,
             role: "assistant",
             content: assistantText,
-            citations: keptCitations,
+            citations: keptCitations ?? usedCitations(assistantText, citations),
             model,
             credits: usage.credits,
             tokens: usage.tokens || null,
