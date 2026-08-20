@@ -10,6 +10,7 @@ export function BotNav({ botId }: { botId: string }) {
 
   const tabs = [
     { href: `/bots/${botId}`, label: "Playground" },
+    { href: `/bots/${botId}/knowledge`, label: "Knowledge" },
     { href: `/bots/${botId}/settings`, label: "Settings" },
   ];
 
