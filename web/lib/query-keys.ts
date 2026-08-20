@@ -14,4 +14,10 @@ export const queryKeys = {
     detail: (botId: string, conversationId: string) =>
       ["conversation", botId, conversationId] as const,
   },
+  gaps: {
+    list: (botId: string) => ["gaps", botId] as const,
+  },
+  leads: {
+    list: (botId: string) => ["leads", botId] as const,
+  },
 } as const;

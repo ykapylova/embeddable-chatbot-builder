@@ -13,6 +13,7 @@ export function BotNav({ botId }: { botId: string }) {
     { href: `/bots/${botId}`, label: "Playground", exact: true },
     { href: `/bots/${botId}/knowledge`, label: "Knowledge" },
     { href: `/bots/${botId}/conversations`, label: "Conversations" },
+    { href: `/bots/${botId}/leads`, label: "Leads" },
     { href: `/bots/${botId}/appearance`, label: "Appearance" },
     { href: `/bots/${botId}/install`, label: "Install" },
     { href: `/bots/${botId}/settings`, label: "Settings" },

@@ -6,6 +6,8 @@ import type {
   ConversationTranscript,
   ConversationUsageSummary,
 } from "lib/api-types/conversation";
+import type { GapsResponse } from "lib/api-types/gaps";
+import type { LeadListResponse } from "lib/api-types/leads";
 import type { RetrievalDebugResponse } from "lib/api-types/retrieval";
 import type { CreateJsonSourceBody, Source } from "lib/api-types/source";
 import { apiPaths } from "./api-paths";
@@ -161,6 +163,27 @@ export function getConversationTranscript(
   conversationId: string,
 ): Promise<ConversationTranscript> {
   return request<ConversationTranscript>(apiPaths.conversation(botId, conversationId));
+}
+
+export function getGaps(botId: string): Promise<GapsResponse> {
+  return request<GapsResponse>(apiPaths.gaps(botId));
+}
+
+export function getLeads(botId: string, cursor: string | null): Promise<LeadListResponse> {
+  const qs = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
+  return request<LeadListResponse>(`${apiPaths.leads(botId)}${qs}`);
+}
+
+/**
+ * The export endpoint returns a raw CSV body, not the `{ data }` envelope, so
+ * this bypasses `request()` the same way `postChatTurn` bypasses it for SSE.
+ */
+export async function exportLeadsCsv(botId: string): Promise<Blob> {
+  const res = await fetch(apiPaths.leadsExport(botId), { credentials: "include" });
+  if (!res.ok) {
+    throw await readApiError(res);
+  }
+  return res.blob();
 }
 
 /**
