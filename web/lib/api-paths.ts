@@ -6,6 +6,7 @@ export const apiPaths = {
   sourceReindex: (botId: string, sourceId: string) =>
     `/api/bots/${botId}/sources/${sourceId}/reindex`,
   retrievalDebug: (botId: string) => `/api/bots/${botId}/retrieval/debug`,
+  chat: (botId: string) => `/api/bots/${botId}/chat`,
 } as const;
 
 export const appPaths = {
