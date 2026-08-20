@@ -73,7 +73,7 @@ export function DemoWidget() {
         >
           <MessageCircle className="h-6 w-6" />
           {nudgeVisible ? (
-            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-white text-[10px] font-semibold text-[var(--brand-1)] ring-2 ring-[var(--brand-1)]">
+            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-white text-xs font-semibold text-[var(--brand-1)] ring-2 ring-[var(--brand-1)]">
               1
             </span>
           ) : null}
@@ -107,7 +107,7 @@ function ChatPanel({ onClose }: { onClose: () => void }) {
       </div>
 
       <div className="space-y-3 px-4 py-5">
-        <div className="max-w-[85%] rounded-lg bg-[var(--brand-soft)] px-3 py-2 text-sm text-[var(--foreground)]">
+        <div className="max-w-[85%] rounded-2xl bg-[var(--brand-soft)] px-3 py-2 text-sm text-[var(--foreground)]">
           Hi — ask me anything about Docsy&apos;s setup, pricing, or the widget.
         </div>
       </div>
@@ -116,11 +116,11 @@ function ChatPanel({ onClose }: { onClose: () => void }) {
         <input
           disabled
           placeholder="This box goes live once the widget ships"
-          className="flex-1 rounded-md border border-[var(--border)] bg-[var(--panel-soft)] px-3 py-2 text-sm text-[var(--muted)] placeholder:text-[var(--muted)]"
+          className="flex-1 rounded-xl border border-[var(--border)] bg-[var(--panel-soft)] px-3 py-2 text-sm text-[var(--muted)] placeholder:text-[var(--muted)]"
         />
         <button
           disabled
-          className="rounded-md bg-[var(--panel-soft)] px-3 py-2 text-sm text-[var(--muted)]"
+          className="rounded-xl bg-[var(--panel-soft)] px-3 py-2 text-sm text-[var(--muted)]"
         >
           Send
         </button>

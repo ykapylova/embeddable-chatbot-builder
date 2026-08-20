@@ -3,17 +3,18 @@ import { UserButton } from "@clerk/nextjs";
 import { LayoutGrid, LogOut } from "lucide-react";
 
 import { IconBadge } from "components/ui/icon-badge";
+import { PageTransition } from "components/providers/page-transition";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="app-shell flex min-h-screen gap-4 p-3 sm:p-4">
+    <div className="flex min-h-screen gap-4 p-3 sm:p-4">
       <aside className="hidden w-60 shrink-0 flex-col rounded-3xl bg-[var(--chrome)] p-4 text-[var(--chrome-foreground)] sm:flex">
         <Link href="/dashboard" className="mb-8 flex items-center gap-2 px-2">
           <span className="h-2.5 w-2.5 rounded-full bg-[var(--accent)]" />
           <span className="text-base font-semibold">Docsy</span>
         </Link>
 
-        <p className="px-2 text-[11px] font-medium tracking-wide text-white/40 uppercase">General</p>
+        <p className="px-2 text-xs font-medium tracking-wide text-white/40 uppercase">General</p>
         <nav className="mt-2 flex flex-col gap-1">
           <Link
             href="/dashboard"
@@ -41,7 +42,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <UserButton />
         </header>
 
-        <main className="min-w-0 flex-1">{children}</main>
+        <main className="min-w-0 flex-1">
+          <PageTransition>{children}</PageTransition>
+        </main>
       </div>
     </div>
   );

@@ -145,7 +145,7 @@ export function ChatSurface({ variant, theme, greeting, sendMessage, onFeedback,
         accentColor={theme.accentColor}
       />
       {theme.brandingEnabled === false ? null : (
-        <p className="border-t border-[var(--border)] py-1.5 text-center text-[11px] text-[var(--muted)]">
+        <p className="border-t border-[var(--border)] py-1.5 text-center text-xs text-[var(--muted)]">
           Powered by Docsy
         </p>
       )}

@@ -21,7 +21,7 @@ const markdownComponents: Components = {
   code: ({ className, ...props }: ComponentProps<"code">) => {
     const isBlock = className?.includes("language-");
     return isBlock ? (
-      <code className={cn("font-mono text-[13px]", className)} {...props} />
+      <code className={cn("font-mono text-sm", className)} {...props} />
     ) : (
       <code
         className="rounded bg-[var(--panel-soft)] px-1 py-0.5 font-mono text-[0.85em]"
@@ -31,7 +31,7 @@ const markdownComponents: Components = {
   },
   pre: ({ ...props }) => (
     <pre
-      className="mt-2 overflow-x-auto rounded-xl bg-[var(--panel-soft)] p-3 text-[13px] leading-snug"
+      className="mt-2 overflow-x-auto rounded-xl bg-[var(--panel-soft)] p-3 text-sm leading-snug"
       {...props}
     />
   ),

@@ -45,12 +45,12 @@ export function HowItWorks() {
                 {index + 1}
               </span>
               <span
-                className="inline-flex h-10 w-10 items-center justify-center rounded-lg"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-2xl"
                 style={{ background: step.chipBg, color: step.chipFg }}
               >
                 <step.icon className="h-5 w-5" />
               </span>
-              <h3 className="mt-4 text-lg font-medium">{step.title}</h3>
+              <h3 className="mt-4 text-lg font-semibold">{step.title}</h3>
               <p className="mt-1.5 text-sm text-[var(--muted)]">{step.description}</p>
             </li>
           ))}

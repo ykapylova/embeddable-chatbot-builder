@@ -1,44 +1,12 @@
 @import "tailwindcss";
 
-:root {
-  --background: #f7f7f8;
-  --foreground: #111827;
-  --muted: #6b7280;
-  --panel: #ffffff;
-  --panel-soft: #f3f4f6;
-  --accent: #111827;
-  --border: #e5e7eb;
-
-  /* Marketing-only accents — additive, the app chrome keeps --accent. */
-  --brand-1: #6d5ef8;
-  --brand-2: #38bdf8;
-  --brand-soft: #eef1ff;
-  --brand-ring: rgba(109, 94, 248, 0.28);
-
-  --chip-violet-bg: #eef1ff;
-  --chip-violet-fg: #6d5ef8;
-  --chip-teal-bg: #e6faf6;
-  --chip-teal-fg: #0f9488;
-  --chip-amber-bg: #fff7e6;
-  --chip-amber-fg: #d97706;
-  --chip-rose-bg: #fff1f4;
-  --chip-rose-fg: #e11d48;
-  --chip-olive-bg: #e4eedd;
-  --chip-olive-fg: #4f6b3b;
-  --chip-periwinkle-bg: #e4e9fb;
-  --chip-periwinkle-fg: #4a5fb0;
-  --chip-neutral-bg: #f3f4f6;
-  --chip-neutral-fg: #6b7280;
-}
-
 /*
- * App shell palette ("Intelly" reference, see DESIGN_SYSTEM.md) — scoped to the
- * console (the `(app)` route group), not the marketing site, which keeps its own
- * violet/teal brand identity. Component classes below read the same --background /
- * --foreground / --panel / --accent / --border tokens as before; overriding them
- * here re-themes every screen under .app-shell without touching each file.
+ * "Intelly" reference palette (see DESIGN_SYSTEM.md) — one warm cream/dark-chrome
+ * design system for the whole site, console and marketing alike. Both used to have
+ * separate palettes (neutral gray console, violet/teal marketing); this is now the
+ * single shared base every component reads via var(--background) etc.
  */
-.app-shell {
+:root {
   --background: #f7f2e7;
   --foreground: #1c1b1a;
   --muted: #8a857c;
@@ -52,6 +20,12 @@
   --chrome-foreground: #f7f2e7;
   --chrome-soft: #2a2927;
 
+  /* Brand gradient (hero glow, primary CTAs) — rose to amber, same family as the tones below. */
+  --brand-1: #e85c7b;
+  --brand-2: #f2c438;
+  --brand-soft: #fbe9d6;
+  --brand-ring: rgba(232, 92, 123, 0.28);
+
   /* Solid category tones — stat cards, hero panels. */
   --tone-amber-bg: #f2c438;
   --tone-amber-fg: #1c1b1a;
@@ -64,18 +38,21 @@
   --tone-accent-bg: #e85c7b;
   --tone-accent-fg: #ffffff;
 
-  /* Soft category tones — tag pills. */
+  /* Soft category tones — tag pills, feature chips. */
+  --chip-violet-bg: #f2e6ee;
+  --chip-violet-fg: #9c4f82;
+  --chip-teal-bg: #e4eedd;
+  --chip-teal-fg: #4f6b3b;
+  --chip-amber-bg: #fdf0c4;
+  --chip-amber-fg: #8a6a0a;
+  --chip-rose-bg: #fbe4e9;
+  --chip-rose-fg: #c23d63;
   --chip-olive-bg: #e4eedd;
   --chip-olive-fg: #4f6b3b;
   --chip-periwinkle-bg: #e4e9fb;
   --chip-periwinkle-fg: #4a5fb0;
   --chip-neutral-bg: #efebe0;
   --chip-neutral-fg: #8a857c;
-
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-app-sans), Inter, ui-sans-serif, system-ui, -apple-system,
-    "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
 }
 
 * {
@@ -88,8 +65,8 @@ body {
   padding: 0;
   background: var(--background);
   color: var(--foreground);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
-    Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  font-family: var(--font-app-sans), Inter, ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
 }
 
 button,
@@ -151,6 +128,21 @@ textarea {
   }
 }
 
+@keyframes page-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-page-fade-in {
+  animation: page-fade-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 .animate-chat-fade-up {
   animation: chat-fade-up 280ms ease-out both;
 }
@@ -178,7 +170,8 @@ textarea {
   .animate-chat-fade-up,
   .animate-chat-pop-in,
   .animate-chat-pulse-soft,
-  .animate-chat-shimmer {
+  .animate-chat-shimmer,
+  .animate-page-fade-in {
     animation: none !important;
   }
 }

@@ -67,12 +67,12 @@ export function FeatureCards() {
               className="group rounded-xl border border-[var(--border)] bg-[var(--panel)] p-6 transition duration-200 hover:-translate-y-1 hover:border-transparent hover:shadow-[0_20px_45px_-15px_var(--brand-ring)]"
             >
               <span
-                className="inline-flex h-10 w-10 items-center justify-center rounded-lg transition group-hover:scale-110"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-2xl transition group-hover:scale-110"
                 style={{ background: feature.chipBg, color: feature.chipFg }}
               >
                 <feature.icon className="h-5 w-5" />
               </span>
-              <h3 className="mt-4 font-medium">{feature.title}</h3>
+              <h3 className="mt-4 text-base font-semibold">{feature.title}</h3>
               <p className="mt-1.5 text-sm text-[var(--muted)]">{feature.description}</p>
             </div>
           ))}

@@ -23,13 +23,13 @@ export function EmbedSnippet() {
           step, no SDK, nothing to install.
         </p>
 
-        <div className="glow-ring mt-8 flex items-center justify-between gap-3 rounded-lg border border-[var(--border)] bg-[#0d1117] px-5 py-4 text-left shadow-xl">
+        <div className="glow-ring mt-8 flex items-center justify-between gap-3 rounded-2xl border border-[var(--border)] bg-[#0d1117] px-5 py-4 text-left shadow-xl">
           <code className="overflow-x-auto whitespace-pre font-mono text-sm text-[#c9d1d9]">
             {SNIPPET}
           </code>
           <button
             onClick={handleCopy}
-            className="shrink-0 rounded-md p-2 text-[#8b949e] transition hover:bg-white/10 hover:text-white"
+            className="shrink-0 rounded-xl p-2 text-[#8b949e] transition hover:bg-white/10 hover:text-white"
             aria-label="Copy snippet"
           >
             {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}

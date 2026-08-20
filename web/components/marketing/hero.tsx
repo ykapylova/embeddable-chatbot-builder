@@ -14,7 +14,7 @@ export function Hero({ signedIn }: { signedIn: boolean }) {
         </span>
 
         <h1
-          className="animate-chat-fade-up mt-5 text-4xl font-semibold text-balance sm:text-6xl"
+          className="animate-chat-fade-up mt-5 text-4xl font-bold tracking-tight text-balance sm:text-6xl"
           style={{ animationDelay: "80ms" }}
         >
           Turn your docs into a <span className="brand-text">support agent</span> that never
