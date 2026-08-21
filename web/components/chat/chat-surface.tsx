@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { ChatStreamEvent } from "lib/api-types/chat";
 import { consumeSseJsonStream } from "lib/chat-turn-stream";
@@ -28,12 +28,32 @@ function freshAssistant(id: string, forQuestion: string): ChatAssistantMessage {
  * confined to the container's own classes below — every other branch in this
  * file runs identically for both.
  */
-export function ChatSurface({ variant, theme, greeting, sendMessage, onFeedback, className }: ChatSurfaceProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+export function ChatSurface({
+  variant,
+  theme,
+  greeting,
+  sendMessage,
+  onFeedback,
+  initialSession,
+  onSessionChange,
+  className,
+}: ChatSurfaceProps) {
+  const [messages, setMessages] = useState<ChatMessage[]>(initialSession?.messages ?? []);
   const [input, setInput] = useState("");
   const [streamingId, setStreamingId] = useState<string | null>(null);
-  const conversationIdRef = useRef<string | undefined>(undefined);
+  const conversationIdRef = useRef<string | undefined>(initialSession?.conversationId);
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Reported only once the surface settles. Reporting on every delta would mean
+  // a write per token, and a half-streamed message is not a state worth
+  // restoring: a turn abandoned mid-stream is left out, still in the transcript
+  // and picked up again by whatever is asked next.
+  useEffect(() => {
+    if (!onSessionChange || streamingId) return;
+    if (messages.length === 0 && !conversationIdRef.current) return;
+
+    onSessionChange({ conversationId: conversationIdRef.current, messages });
+  }, [messages, streamingId, onSessionChange]);
 
   const updateAssistant = useCallback(
     (id: string, updater: (message: ChatAssistantMessage) => ChatAssistantMessage) => {

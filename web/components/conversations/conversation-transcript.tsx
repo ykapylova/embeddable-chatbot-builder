@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ExternalLink, ThumbsDown, ThumbsUp } from "lucide-react";
+import { ChevronLeft, ExternalLink, MessageSquarePlus, ThumbsDown, ThumbsUp } from "lucide-react";
 
 import { getConversationTranscript } from "lib/api-client";
 import { appPaths } from "lib/api-paths";
 import type { ConversationMessage } from "lib/api-types/conversation";
 import { queryKeys } from "lib/query-keys";
 import { cn } from "lib/utils";
+import { sessionFromTranscript, writePlaygroundSession } from "components/chat/playground-session";
 import { ConversationChannelBadge } from "components/conversations/conversation-channel-badge";
 import { Button } from "components/ui/button";
 
@@ -81,10 +83,16 @@ export function ConversationTranscriptView({
   botId: string;
   conversationId: string;
 }) {
+  const router = useRouter();
   const transcript = useQuery({
     queryKey: queryKeys.conversations.detail(botId, conversationId),
     queryFn: () => getConversationTranscript(botId, conversationId),
   });
+
+  function continueInPlayground(messages: ConversationMessage[]) {
+    writePlaygroundSession(botId, sessionFromTranscript(conversationId, messages));
+    router.push(appPaths.bot(botId));
+  }
 
   return (
     <div className="space-y-4">
@@ -126,6 +134,23 @@ export function ConversationTranscriptView({
             ) : null}
             {transcript.data.pageUrl ? (
               <span className="text-xs text-[var(--muted)]">from {transcript.data.pageUrl}</span>
+            ) : null}
+
+            {/*
+              Playground conversations only. A widget conversation belongs to a
+              visitor, and typing into it from here would append the owner's
+              messages to someone else's transcript.
+            */}
+            {transcript.data.channel === "app" && transcript.data.messages.length > 0 ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="ms-auto"
+                onClick={() => continueInPlayground(transcript.data.messages)}
+              >
+                <MessageSquarePlus className="h-4 w-4" />
+                Continue in playground
+              </Button>
             ) : null}
           </div>
 

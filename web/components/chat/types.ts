@@ -36,6 +36,13 @@ export type ChatAssistantMessage = {
 
 export type ChatMessage = ChatUserMessage | ChatAssistantMessage;
 
+/** Everything needed to put a conversation back on screen and carry on with it. */
+export type ChatSession = {
+  /** Absent until the first turn comes back — the server mints the id. */
+  conversationId?: string;
+  messages: ChatMessage[];
+};
+
 /**
  * Performs one turn and returns the raw SSE `Response` — ChatSurface consumes
  * it with `consumeSseJsonStream`. Kept fetch-agnostic on purpose: the app and
@@ -63,5 +70,16 @@ export type ChatSurfaceProps = {
    * Optional — a caller with nowhere to persist the choice yet can omit it.
    */
   onFeedback?: ChatFeedback;
+  /**
+   * Conversation to open with, instead of an empty surface. Read once, on
+   * mount — remount the component (a changing `key`) to start over.
+   */
+  initialSession?: ChatSession;
+  /**
+   * Fired whenever the surface settles, so a caller that outlives it can put
+   * the conversation back. The playground uses this; the widget deliberately
+   * does not, and starts fresh on every page load.
+   */
+  onSessionChange?: (session: ChatSession) => void;
   className?: string;
 };

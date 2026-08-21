@@ -94,7 +94,7 @@ web/
 | `npm run build` | Production build |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | `next typegen && tsc --noEmit` — typegen writes the generated `next-env.d.ts`, which is not in version control |
-| `npm test` | Provider contract tests against the stub — no network, no keys |
+| `npm test` | Unit tests under `server/` and `components/`, including the provider contract against the stub — no network, no keys |
 | `npm run test:live` | The same tests against the real OpenAI API, using `.env.local` |
 | `npm run verify` | lint + typecheck + test + build — the gate before every commit |
 | `npm run db:generate` | Generate a migration from the schema |
