@@ -1,5 +1,7 @@
+import type { PlanId } from "lib/plans";
 import { sourceRepository, type SourceRow } from "server/repositories/source.repository";
 import { invalidateAnswerCache } from "server/services/answer/cache";
+import { assertPlan, PlanLimitError } from "server/services/plan.service";
 
 import { chunkText } from "./chunk.service";
 import { embedTexts } from "./embed.service";
@@ -17,14 +19,31 @@ function emptyContentMessage(type: SourceRow["type"]): string {
   }
 }
 
+/** Failures the owner caused and can act on, as opposed to something breaking. */
+function ownerFacingMessage(error: unknown): string | null {
+  if (error instanceof SourceContentError || error instanceof PlanLimitError) return error.message;
+  return null;
+}
+
 /**
  * Normalizes, chunks and embeds raw extracted text, then writes the result
  * atomically. Nothing is written to the database until every batch of
  * embeddings has succeeded, so a mid-pipeline failure (a bad chunk, a failed
  * OpenAI call) never leaves the source with partial content — it ends as
  * `failed` with the previous chunks (if any) untouched.
+ *
+ * The character cap is enforced here rather than at the call sites because this
+ * is where the number it counts is produced: `charCount` is the *normalized*
+ * length, and for a URL or a file nothing upstream knows it — a 2MB PDF and a
+ * 2MB text file do not carry the same amount of text. Placing it before
+ * `chunkText` also means an over-limit source is never embedded, which is what
+ * the cap is protecting.
  */
-export async function ingestSource(source: SourceRow, rawText: string): Promise<SourceRow> {
+export async function ingestSource(
+  source: SourceRow,
+  rawText: string,
+  plan: PlanId,
+): Promise<SourceRow> {
   const { id: sourceId, botId } = source;
 
   try {
@@ -32,6 +51,14 @@ export async function ingestSource(source: SourceRow, rawText: string): Promise<
     if (!normalized) {
       throw new SourceContentError(emptyContentMessage(source.type));
     }
+
+    await assertPlan({
+      type: "sourceChars",
+      botId,
+      plan,
+      incomingChars: normalized.length,
+      replacedSourceId: sourceId,
+    });
 
     const chunks = chunkText(normalized);
     if (chunks.length === 0) {
@@ -60,12 +87,10 @@ export async function ingestSource(source: SourceRow, rawText: string): Promise<
     await invalidateAnswerCache(botId);
     return updated;
   } catch (error) {
-    const message =
-      error instanceof SourceContentError
-        ? error.message
-        : "Something went wrong while indexing this source. Try reindexing.";
+    const expected = ownerFacingMessage(error);
+    const message = expected ?? "Something went wrong while indexing this source. Try reindexing.";
 
-    if (!(error instanceof SourceContentError)) {
+    if (!expected) {
       // Never log source content — only the id and the failure itself.
       console.error("[ingestSource]", sourceId, error);
     }

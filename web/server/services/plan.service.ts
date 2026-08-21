@@ -24,10 +24,31 @@ export class PlanLimitError extends Error {
 export type PlanCheck =
   | { type: "bots"; accountId: string; plan: PlanId }
   | { type: "sources"; botId: string; plan: PlanId }
+  /**
+   * Run once the text has been extracted and normalized, which is the first
+   * moment the incoming size is known — `sources` can only tell whether the bot
+   * is already full. `replacedSourceId` is the row this content belongs to: on a
+   * reindex its stored `charCount` is what the new text replaces, so counting it
+   * as well would refuse a source for its own weight.
+   */
+  | { type: "sourceChars"; botId: string; plan: PlanId; incomingChars: number; replacedSourceId: string }
   | { type: "domains"; plan: PlanId; requestedDomainCount: number }
   | { type: "branding"; plan: PlanId }
   | { type: "leads"; plan: PlanId }
   | { type: "export"; plan: PlanId };
+
+/** Exported for its own test: the arithmetic that decides a reindex is a swap, not an addition. */
+export function charsAfterReplacing(
+  sources: { id: string; charCount: number }[],
+  replacedSourceId: string,
+  incomingChars: number,
+): number {
+  const kept = sources
+    .filter((source) => source.id !== replacedSourceId)
+    .reduce((total, source) => total + source.charCount, 0);
+
+  return kept + incomingChars;
+}
 
 function toApiLimit(value: number): PlanLimitValue {
   return Number.isFinite(value) ? value : null;
@@ -64,6 +85,20 @@ export async function assertPlan(check: PlanCheck): Promise<void> {
         throw new PlanLimitError(
           "LIMIT_CHARS",
           `This bot's knowledge base has reached your plan's ${limits.chars.toLocaleString()}-character limit. Upgrade for more room.`,
+        );
+      }
+      return;
+    }
+
+    case "sourceChars": {
+      const limit = planLimits(check.plan).chars;
+      const sources = await sourceRepository.listByBot(check.botId);
+      const total = charsAfterReplacing(sources, check.replacedSourceId, check.incomingChars);
+
+      if (total > limit) {
+        throw new PlanLimitError(
+          "LIMIT_CHARS",
+          `This source would take the knowledge base to ${total.toLocaleString()} characters, past your plan's ${limit.toLocaleString()}-character limit. Upgrade for more room.`,
         );
       }
       return;

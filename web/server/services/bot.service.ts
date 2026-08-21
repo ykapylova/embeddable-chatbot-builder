@@ -12,7 +12,9 @@ import {
 } from "lib/bot-defaults";
 import type { PlanId } from "lib/plans";
 import { botRepository, type BotRow } from "server/repositories/bot.repository";
+import { sourceRepository } from "server/repositories/source.repository";
 import { assertPlan } from "server/services/plan.service";
+import { discardSourceBlobs } from "server/services/sources/storage-cleanup.service";
 
 const toneValues = BOT_TONES.map((t) => t.value) as [string, ...string[]];
 
@@ -170,7 +172,19 @@ export const botService = {
     return row ? toBot(row) : null;
   },
 
+  /**
+   * Sources cascade away in SQL when the bot row goes, which is why their
+   * storage keys have to be read while the rows still exist. The read is not an
+   * ownership check — the delete below is still scoped by `accountId`, and the
+   * keys are only used once it reports that a row of this account's was removed.
+   */
   async remove(botId: string, accountId: string): Promise<boolean> {
-    return botRepository.remove(botId, accountId);
+    const sources = await sourceRepository.listByBot(botId);
+
+    const removed = await botRepository.remove(botId, accountId);
+    if (!removed) return false;
+
+    await discardSourceBlobs(sources.map((source) => source.storageKey));
+    return true;
   },
 };

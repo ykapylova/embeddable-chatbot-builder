@@ -47,6 +47,17 @@ export async function uploadBytesToChatBucket(
   return { path: data.path };
 }
 
+export async function removeFromChatBucket(objectPaths: string[]): Promise<void> {
+  if (objectPaths.length === 0) return;
+  const supabase = getServiceClient();
+  const bucket = getStorageBucketName();
+  const { error } = await supabase.storage.from(bucket).remove(objectPaths);
+  if (error) {
+    console.error("[supabase storage remove]", error);
+    throw new Error(error.message || "Storage delete failed");
+  }
+}
+
 export async function getSignedUrlForPath(objectPath: string, expiresInSec: number): Promise<string> {
   const supabase = getServiceClient();
   const bucket = getStorageBucketName();

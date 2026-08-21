@@ -22,6 +22,7 @@ import { uploadBytesToChatBucket } from "server/services/supabase-storage.servic
 import { SourceContentError, SourceValidationError } from "./errors";
 import { ingestSource } from "./ingest.service";
 import { extractTextForFile, extractTextFromHtml } from "./parse.service";
+import { discardSourceBlobs } from "./storage-cleanup.service";
 import { downloadFromChatBucket } from "./storage-fetch.service";
 import { fetchUrlHtml } from "./url-fetch.service";
 
@@ -93,16 +94,25 @@ function urlTitle(url: string): string {
  * so the account owner can see and retry it. */
 async function createAndProcess(
   botId: string,
+  plan: PlanId,
   values: { type: SourceRow["type"]; title: string; sourceUrl?: string | null; storageKey?: string | null },
   getRawText: () => Promise<string>,
 ): Promise<Source> {
-  const created = await sourceRepository.create({
-    botId,
-    type: values.type,
-    title: values.title,
-    sourceUrl: values.sourceUrl ?? null,
-    storageKey: values.storageKey ?? null,
-  });
+  let created: SourceRow;
+  try {
+    created = await sourceRepository.create({
+      botId,
+      type: values.type,
+      title: values.title,
+      sourceUrl: values.sourceUrl ?? null,
+      storageKey: values.storageKey ?? null,
+    });
+  } catch (error) {
+    // The blob is uploaded before the row exists, so a failed insert is the one
+    // moment an object is left with nothing that will ever reference it.
+    await discardSourceBlobs([values.storageKey]);
+    throw error;
+  }
 
   await sourceRepository.update(created.id, botId, { status: "processing" });
 
@@ -121,7 +131,7 @@ async function createAndProcess(
     return toSource(failed ?? created);
   }
 
-  const finalRow = await ingestSource(created, rawText);
+  const finalRow = await ingestSource(created, rawText, plan);
   return toSource(finalRow);
 }
 
@@ -169,6 +179,7 @@ export const sourceService = {
     if (parsed.type === "url") {
       return createAndProcess(
         botId,
+        plan,
         { type: "url", title: urlTitle(parsed.url), sourceUrl: parsed.url },
         async () => extractTextFromHtml(await fetchUrlHtml(parsed.url)),
       );
@@ -179,6 +190,7 @@ export const sourceService = {
       await uploadTextBlob(storageKey, parsed.content);
       return createAndProcess(
         botId,
+        plan,
         { type: "text", title: parsed.title.slice(0, SOURCE_TITLE_MAX), storageKey },
         () => Promise.resolve(parsed.content),
       );
@@ -189,6 +201,7 @@ export const sourceService = {
     await uploadTextBlob(storageKey, combined);
     return createAndProcess(
       botId,
+      plan,
       { type: "faq", title: parsed.question.slice(0, SOURCE_TITLE_MAX), storageKey },
       () => Promise.resolve(combined),
     );
@@ -239,6 +252,7 @@ export const sourceService = {
 
     return createAndProcess(
       botId,
+      plan,
       { type: "file", title: title.slice(0, SOURCE_TITLE_MAX), storageKey },
       () => extractTextForFile(bytes, extension),
     );
@@ -248,13 +262,17 @@ export const sourceService = {
     const bot = await requireOwnedBot(botId, accountId);
     if (!bot) return false;
     const removed = await sourceRepository.remove(sourceId, botId);
+    if (!removed) return false;
+
+    await discardSourceBlobs([removed.storageKey]);
     // Removing a source is a knowledge change too — drop any cached answers
     // that might have leaned on it.
-    if (removed) await invalidateAnswerCache(botId);
-    return removed;
+    await invalidateAnswerCache(botId);
+    return true;
   },
 
-  async reindex(botId: string, accountId: string, sourceId: string): Promise<Source | null> {
+
+  async reindex(botId: string, accountId: string, plan: PlanId, sourceId: string): Promise<Source | null> {
     const bot = await requireOwnedBot(botId, accountId);
     if (!bot) return null;
 
@@ -276,7 +294,7 @@ export const sourceService = {
       return toSource(failed ?? source);
     }
 
-    const finalRow = await ingestSource(source, rawText);
+    const finalRow = await ingestSource(source, rawText, plan);
     return toSource(finalRow);
   },
 };
