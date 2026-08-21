@@ -21,6 +21,7 @@ import { uploadBytesToChatBucket } from "server/services/supabase-storage.servic
 import { SourceContentError, SourceValidationError } from "./errors";
 import { ingestSource } from "./ingest.service";
 import { extractTextForFile, extractTextFromHtml } from "./parse.service";
+import { discardSourceBlobs } from "./storage-cleanup.service";
 import { downloadFromChatBucket } from "./storage-fetch.service";
 import { fetchUrlHtml } from "./url-fetch.service";
 
@@ -95,13 +96,21 @@ async function createAndProcess(
   values: { type: SourceRow["type"]; title: string; sourceUrl?: string | null; storageKey?: string | null },
   getRawText: () => Promise<string>,
 ): Promise<Source> {
-  const created = await sourceRepository.create({
-    botId,
-    type: values.type,
-    title: values.title,
-    sourceUrl: values.sourceUrl ?? null,
-    storageKey: values.storageKey ?? null,
-  });
+  let created: SourceRow;
+  try {
+    created = await sourceRepository.create({
+      botId,
+      type: values.type,
+      title: values.title,
+      sourceUrl: values.sourceUrl ?? null,
+      storageKey: values.storageKey ?? null,
+    });
+  } catch (error) {
+    // The blob is uploaded before the row exists, so a failed insert is the one
+    // moment an object is left with nothing that will ever reference it.
+    await discardSourceBlobs([values.storageKey]);
+    throw error;
+  }
 
   await sourceRepository.update(created.id, botId, { status: "processing" });
 
@@ -246,7 +255,12 @@ export const sourceService = {
   async remove(botId: string, accountId: string, sourceId: string): Promise<boolean> {
     const bot = await requireOwnedBot(botId, accountId);
     if (!bot) return false;
-    return sourceRepository.remove(sourceId, botId);
+
+    const removed = await sourceRepository.remove(sourceId, botId);
+    if (!removed) return false;
+
+    await discardSourceBlobs([removed.storageKey]);
+    return true;
   },
 
   async reindex(botId: string, accountId: string, sourceId: string): Promise<Source | null> {

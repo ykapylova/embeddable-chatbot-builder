@@ -58,13 +58,14 @@ export const sourceRepository = {
     return row ?? null;
   },
 
-  async remove(sourceId: string, botId: string): Promise<boolean> {
+  /** Returns the deleted row's `storageKey` so the caller can drop its blob too; null when nothing matched. */
+  async remove(sourceId: string, botId: string): Promise<{ storageKey: string | null } | null> {
     const db = getDb();
-    const rows = await db
+    const [row] = await db
       .delete(sourcesTable)
       .where(and(eq(sourcesTable.id, sourceId), eq(sourcesTable.botId, botId)))
-      .returning({ id: sourcesTable.id });
-    return rows.length > 0;
+      .returning({ storageKey: sourcesTable.storageKey });
+    return row ?? null;
   },
 
   /**
