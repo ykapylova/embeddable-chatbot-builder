@@ -1,6 +1,10 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
 /**
+ * Next 16 renamed this file convention from `middleware` to `proxy`; the
+ * default export and `config.matcher` are unchanged, and Clerk's helper keeps
+ * its own name because it is a request handler, not a file convention.
+ *
  * Public surface of the product:
  * - marketing (`/`, `/pricing`) is readable signed out;
  * - `/embed/*` and `/api/public/*` serve the widget on customer sites, where auth
