@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Check } from "lucide-react";
 
 import { createSource } from "lib/api-client";
@@ -94,6 +95,7 @@ function GapComposer({
         answer: answer.trim(),
       }),
     onSuccess: (source: Source) => {
+      toast.success("FAQ created from gap");
       queryClient.setQueryData<Source[]>(queryKeys.sources.list(botId), (prev) =>
         prev ? [source, ...prev] : [source],
       );

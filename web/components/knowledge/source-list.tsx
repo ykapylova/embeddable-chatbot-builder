@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { FileText, Globe, HelpCircle, RotateCcw, Trash2, Type } from "lucide-react";
 
 import { deleteSource, reindexSource } from "lib/api-client";
@@ -46,6 +47,7 @@ function SourceRow({ botId, source }: { botId: string; source: Source }) {
   const retry = useMutation({
     mutationFn: () => reindexSource(botId, source.id),
     onSuccess: (updated) => {
+      toast.success("Source reindexed");
       queryClient.setQueryData<Source[]>(queryKeys.sources.list(botId), (prev) =>
         prev ? prev.map((item) => (item.id === updated.id ? updated : item)) : prev,
       );
@@ -55,6 +57,7 @@ function SourceRow({ botId, source }: { botId: string; source: Source }) {
   const remove = useMutation({
     mutationFn: () => deleteSource(botId, source.id),
     onSuccess: () => {
+      toast.success("Source deleted");
       queryClient.setQueryData<Source[]>(queryKeys.sources.list(botId), (prev) =>
         prev ? prev.filter((item) => item.id !== source.id) : prev,
       );

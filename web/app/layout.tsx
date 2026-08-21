@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
+import { Toaster } from "sonner";
 import "./globals.css";
 import { QueryProvider } from "../components/providers/query-provider";
 
@@ -31,6 +32,18 @@ export default function RootLayout({
       <html lang="en" className={plusJakartaSans.variable}>
         <body>
           <QueryProvider>{children}</QueryProvider>
+          <Toaster
+            theme="light"
+            position="bottom-right"
+            toastOptions={{
+              classNames: {
+                toast: "app-toast",
+                success: "app-toast-success",
+                error: "app-toast-error",
+                loading: "app-toast-loading",
+              },
+            }}
+          />
         </body>
       </html>
     </ClerkProvider>

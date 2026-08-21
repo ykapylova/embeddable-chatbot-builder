@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { AlertCircle, FileText, Globe, HelpCircle, Loader2, Type, UploadCloud, X } from "lucide-react";
 
 import { createFileSource, createSource } from "lib/api-client";
@@ -105,6 +106,7 @@ function FileTab({ botId }: { botId: string }) {
       formData.append("type", "file");
       formData.append("file", file);
       const source = await createFileSource(botId, formData);
+      toast.success(`"${file.name}" added to knowledge base`);
       mergeSource(queryClient, botId, source);
       setQueue((prev) => prev.filter((item) => item.id !== id));
     } catch (error) {
@@ -238,6 +240,7 @@ function UrlTab({ botId }: { botId: string }) {
   const create = useMutation({
     mutationFn: () => createSource(botId, { type: "url", url: url.trim() }),
     onSuccess: (source) => {
+      toast.success("URL added to knowledge base");
       mergeSource(queryClient, botId, source);
       setUrl("");
     },
@@ -277,6 +280,7 @@ function TextTab({ botId }: { botId: string }) {
   const create = useMutation({
     mutationFn: () => createSource(botId, { type: "text", title: title.trim(), content: content.trim() }),
     onSuccess: (source) => {
+      toast.success("Text added to knowledge base");
       mergeSource(queryClient, botId, source);
       setTitle("");
       setContent("");
@@ -333,6 +337,7 @@ function FaqTab({ botId }: { botId: string }) {
     mutationFn: () =>
       createSource(botId, { type: "faq", question: question.trim(), answer: answer.trim() }),
     onSuccess: (source) => {
+      toast.success("FAQ added to knowledge base");
       mergeSource(queryClient, botId, source);
       setQuestion("");
       setAnswer("");

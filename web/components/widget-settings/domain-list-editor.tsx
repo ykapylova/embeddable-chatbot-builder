@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { X } from "lucide-react";
 
 import { updateBot } from "lib/api-client";
@@ -39,6 +40,7 @@ export function DomainListEditor({ botId, domains }: { botId: string; domains: s
   const mutation = useMutation({
     mutationFn: (nextDomains: string[]) => updateBot(botId, { allowedDomains: nextDomains }),
     onSuccess: (updated) => {
+      toast.success("Domains updated");
       queryClient.setQueryData(queryKeys.bots.detail(botId), updated);
       void queryClient.invalidateQueries({ queryKey: queryKeys.bots.all });
     },
