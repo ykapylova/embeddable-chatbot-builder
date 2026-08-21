@@ -27,7 +27,7 @@ export function KnowledgeBase({ botId }: { botId: string }) {
 
       {sources.isError ? (
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-6 text-center">
-          <p className="text-sm text-red-600">
+          <p className="text-sm text-[var(--danger)]">
             {sources.error instanceof Error ? sources.error.message : "Could not load sources"}
           </p>
           <Button variant="outline" className="mt-3" onClick={() => sources.refetch()}>

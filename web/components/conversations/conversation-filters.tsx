@@ -18,10 +18,10 @@ function FilterPill({
       aria-pressed={active}
       onClick={onClick}
       className={cn(
-        "shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition",
+        "shrink-0 rounded-full border border-transparent px-3 py-1 text-xs font-medium transition active:scale-[0.98]",
         active
-          ? "border-[var(--accent)] bg-[var(--accent)] text-white"
-          : "border-[var(--border)] bg-[var(--panel)] text-[var(--muted)] hover:text-[var(--foreground)]",
+          ? "bg-[var(--chrome)] text-[var(--chrome-foreground)]"
+          : "border-[var(--border)] bg-[var(--panel)] text-[var(--muted)] hover:bg-[var(--panel-soft)] hover:text-[var(--foreground)]",
       )}
     >
       {children}

@@ -23,6 +23,13 @@
   var APP_ORIGIN = new URL(currentScript.src, window.location.href).origin;
   var PANEL_RADIUS = "16px";
   var PANEL_SHADOW = "0 16px 48px rgba(0,0,0,0.24)";
+  // Below either of these the floating panel no longer fits next to the bubble,
+  // so the chat takes over the viewport instead.
+  var FULLSCREEN_MAX_WIDTH = 480;
+  var FULLSCREEN_MAX_HEIGHT = 480;
+  var BUBBLE_SHADOW = "0 8px 24px rgba(0,0,0,0.2)";
+  var BUBBLE_SHADOW_HOVER = "0 10px 28px rgba(0,0,0,0.26)";
+  var BUBBLE_SHADOW_FOCUS = BUBBLE_SHADOW + ", 0 0 0 3px #1c1b1a";
 
   var state = {
     open: false,
@@ -36,6 +43,23 @@
     if (state.iframe && state.iframe.contentWindow) {
       state.iframe.contentWindow.postMessage(message, APP_ORIGIN);
     }
+  }
+
+  // The host page owns the layout mode: it is the only window whose width says
+  // whether a 380px panel fits. Letting the iframe decide oscillated, because
+  // fullscreen widened the iframe past its own breakpoint, which reported
+  // "panel", which narrowed it again.
+  function preferredMode() {
+    return window.innerWidth < FULLSCREEN_MAX_WIDTH || window.innerHeight < FULLSCREEN_MAX_HEIGHT
+      ? "fullscreen"
+      : "panel";
+  }
+
+  function syncMode() {
+    var mode = preferredMode();
+    if (mode === state.mode) return;
+    state.mode = mode;
+    applyPanelGeometry();
   }
 
   function applyPanelGeometry() {
@@ -117,6 +141,7 @@
   function open() {
     if (state.open) return;
     state.open = true;
+    state.mode = preferredMode();
     ensureIframe();
     applyPanelGeometry();
     setBubbleIcon();
@@ -168,8 +193,8 @@
   bubble.style.borderRadius = "50%";
   bubble.style.border = "none";
   bubble.style.cursor = "pointer";
-  bubble.style.background = "#4f46e5";
-  bubble.style.boxShadow = "0 8px 24px rgba(0,0,0,0.2)";
+  bubble.style.background = "#e85c7b";
+  bubble.style.boxShadow = BUBBLE_SHADOW;
   bubble.style.display = "flex";
   bubble.style.alignItems = "center";
   bubble.style.justifyContent = "center";
@@ -177,6 +202,44 @@
   bubble.style.fontFamily = "system-ui, sans-serif";
   bubble.style.fontSize = "22px";
   bubble.style.padding = "0";
+  bubble.style.outline = "none";
+
+  // Hover, pressed and keyboard-focus states, done in JS because a shadow root
+  // styled through the CSSOM has no stylesheet to hang :hover/:focus-visible on.
+  var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!reduceMotion) bubble.style.transition = "transform 150ms ease, box-shadow 150ms ease";
+
+  function setBubbleScale(scale) {
+    if (reduceMotion) return;
+    bubble.style.transform = "scale(" + scale + ")";
+  }
+
+  bubble.addEventListener("mouseenter", function () {
+    setBubbleScale(1.05);
+    bubble.style.boxShadow = BUBBLE_SHADOW_HOVER;
+  });
+  bubble.addEventListener("mouseleave", function () {
+    setBubbleScale(1);
+    bubble.style.boxShadow = BUBBLE_SHADOW;
+  });
+  bubble.addEventListener("mousedown", function () {
+    setBubbleScale(0.96);
+  });
+  bubble.addEventListener("mouseup", function () {
+    setBubbleScale(1.05);
+  });
+  bubble.addEventListener("focus", function () {
+    var keyboard = true;
+    try {
+      keyboard = bubble.matches(":focus-visible");
+    } catch (error) {
+      // Older engines without :focus-visible: show the ring rather than hide it.
+    }
+    if (keyboard) bubble.style.boxShadow = BUBBLE_SHADOW_FOCUS;
+  });
+  bubble.addEventListener("blur", function () {
+    bubble.style.boxShadow = BUBBLE_SHADOW;
+  });
   bubble.addEventListener("click", toggle);
 
   var badge = document.createElement("span");
@@ -186,7 +249,7 @@
   badge.style.width = "12px";
   badge.style.height = "12px";
   badge.style.borderRadius = "50%";
-  badge.style.background = "#ef4444";
+  badge.style.background = "#f2c438";
   badge.style.border = "2px solid #ffffff";
   badge.style.display = "none";
 
@@ -203,14 +266,17 @@
     var data = event.data;
     if (!data || typeof data.type !== "string") return;
 
-    if (data.type === "resize" && (data.mode === "panel" || data.mode === "fullscreen")) {
-      state.mode = data.mode;
-      applyPanelGeometry();
-    } else if (data.type === "unread") {
+    if (data.type === "unread") {
       if (!state.open) setUnread(true);
     } else if (data.type === "close") {
       close();
     }
+  });
+
+  var resizeTimer;
+  window.addEventListener("resize", function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(syncMode, 150);
   });
 
   function mount() {

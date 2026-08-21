@@ -29,7 +29,7 @@ export function BotHeader({ botId }: { botId: string }) {
       ) : null}
 
       {bot.isError ? (
-        <h1 className="text-2xl font-bold text-red-600">Bot not found</h1>
+        <h1 className="text-2xl font-bold text-[var(--danger)]">Bot not found</h1>
       ) : null}
 
       {bot.data ? <h1 className="truncate text-2xl font-bold tracking-tight">{bot.data.name}</h1> : null}

@@ -9,7 +9,7 @@
 :root {
   --background: #f7f2e7;
   --foreground: #1c1b1a;
-  --muted: #8a857c;
+  --muted: #6f6a61;
   --panel: #ffffff;
   --panel-soft: #f1ecdb;
   --accent: #e85c7b;
@@ -51,8 +51,18 @@
   --chip-olive-fg: #4f6b3b;
   --chip-periwinkle-bg: #e4e9fb;
   --chip-periwinkle-fg: #4a5fb0;
+  /* Status colours. Not part of the reference palette, but destructive and
+   * healthy states must not be guessed per component — these are the only
+   * red/green in the product. Both clear 4.5:1 on cream and on white. */
+  --danger: #b3261e;
+  --danger-strong: #8f1d17;
+  --danger-foreground: #ffffff;
+  --danger-soft: #fbe4e2;
+  --danger-border: #f0c8c4;
+  --success: #4f6b3b;
+
   --chip-neutral-bg: #efebe0;
-  --chip-neutral-fg: #8a857c;
+  --chip-neutral-fg: #6f6a61;
 }
 
 * {
@@ -85,6 +95,16 @@ body {
   a {
     color: inherit;
     text-decoration: none;
+  }
+
+  /*
+   * One keyboard focus ring for the whole product. Per-component rings only
+   * exist where this one would be invisible (accent-on-accent). Pointer users
+   * never see it: `:focus-visible`, not `:focus`.
+   */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
   }
 }
 
@@ -141,11 +161,11 @@ body {
 }
 
 .animate-page-fade-in {
-  animation: page-fade-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: page-fade-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .animate-chat-fade-up {
-  animation: chat-fade-up 280ms ease-out both;
+  animation: chat-fade-up 240ms ease-out both;
 }
 
 .animate-chat-pop-in {
@@ -271,11 +291,11 @@ body {
 }
 
 [data-sonner-toast][data-styled="true"].app-toast-error {
-  border-left: 4px solid #dc2626;
+  border-left: 4px solid var(--danger);
 }
 
 [data-sonner-toast][data-styled="true"].app-toast-error [data-icon] {
-  color: #dc2626;
+  color: var(--danger);
 }
 
 [data-sonner-toast][data-styled="true"].app-toast-loading {

@@ -1,40 +1,21 @@
 import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
-import { CreditCard, LayoutGrid, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 
-import { IconBadge } from "components/ui/icon-badge";
+import { ConsoleMobileNav, ConsoleSidebarNav } from "components/layout/console-nav";
 import { PageTransition } from "components/providers/page-transition";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen gap-4 p-3 sm:p-4">
       <aside className="hidden w-60 shrink-0 flex-col rounded-3xl bg-[var(--chrome)] p-4 text-[var(--chrome-foreground)] sm:flex">
-        <Link href="/dashboard" className="mb-8 flex items-center gap-2 px-2">
+        <Link href="/dashboard" className="mb-8 flex items-center gap-2 rounded-xl px-2">
           <span className="h-2.5 w-2.5 rounded-full bg-[var(--accent)]" />
           <span className="text-base font-semibold">Docsy</span>
         </Link>
 
         <p className="px-2 text-xs font-medium tracking-wide text-white/40 uppercase">General</p>
-        <nav className="mt-2 flex flex-col gap-1">
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-2.5 rounded-xl px-2 py-2 text-sm text-white/70 transition hover:bg-white/10 hover:text-white"
-          >
-            <IconBadge tone="chrome-active" size="sm">
-              <LayoutGrid />
-            </IconBadge>
-            Dashboard
-          </Link>
-          <Link
-            href="/billing"
-            className="flex items-center gap-2.5 rounded-xl px-2 py-2 text-sm text-white/70 transition hover:bg-white/10 hover:text-white"
-          >
-            <IconBadge tone="chrome-active" size="sm">
-              <CreditCard />
-            </IconBadge>
-            Billing
-          </Link>
-        </nav>
+        <ConsoleSidebarNav />
 
         <div className="mt-auto flex items-center gap-2.5 rounded-xl px-2 py-2 text-sm text-white/70">
           <UserButton />
@@ -44,11 +25,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="mb-3 flex items-center justify-between rounded-2xl bg-[var(--chrome)] px-4 py-3 text-[var(--chrome-foreground)] sm:hidden">
-          <Link href="/dashboard" className="text-base font-semibold">
-            Docsy
-          </Link>
-          <UserButton />
+        <header className="mb-3 flex flex-col gap-3 rounded-2xl bg-[var(--chrome)] px-4 py-3 text-[var(--chrome-foreground)] sm:hidden">
+          <div className="flex items-center justify-between">
+            <Link href="/dashboard" className="flex items-center gap-2 rounded-xl text-base font-semibold">
+              <span className="h-2.5 w-2.5 rounded-full bg-[var(--accent)]" />
+              Docsy
+            </Link>
+            <UserButton />
+          </div>
+          <ConsoleMobileNav />
         </header>
 
         <main className="min-w-0 flex-1">

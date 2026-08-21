@@ -21,6 +21,7 @@ import type { Source } from "lib/api-types/source";
 import { PlanLimitMessage } from "components/plan/plan-limit-message";
 import { Button } from "components/ui/button";
 import { Input } from "components/ui/input";
+import { Textarea } from "components/ui/textarea";
 
 type Tab = "file" | "url" | "text" | "faq";
 
@@ -188,12 +189,12 @@ function FileTab({ botId }: { botId: string }) {
                 {item.status === "uploading" ? (
                   <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-[var(--muted)]" />
                 ) : (
-                  <AlertCircle className="h-3.5 w-3.5 shrink-0 text-red-600" />
+                  <AlertCircle className="h-3.5 w-3.5 shrink-0 text-[var(--danger)]" />
                 )}
                 <span className="min-w-0">
                   <span className="block truncate">{item.file.name}</span>
                   {item.status === "error" ? (
-                    <span className="block text-xs text-red-600">
+                    <span className="block text-xs text-[var(--danger)]">
                       <PlanLimitMessage error={item.error} fallback="Upload failed" />
                     </span>
                   ) : null}
@@ -264,7 +265,7 @@ function UrlTab({ botId }: { botId: string }) {
         {create.isPending ? "Adding…" : "Add URL"}
       </Button>
       {create.isError ? (
-        <p className="text-sm text-red-600 sm:self-center">
+        <p className="text-sm text-[var(--danger)] sm:self-center">
           <PlanLimitMessage error={create.error} fallback="Could not add this URL" />
         </p>
       ) : null}
@@ -303,13 +304,12 @@ function TextTab({ botId }: { botId: string }) {
         maxLength={SOURCE_TITLE_MAX}
         placeholder="Title, e.g. Refund policy"
       />
-      <textarea
+      <Textarea
         value={content}
         onChange={(event) => setContent(event.target.value)}
         maxLength={SOURCE_TEXT_MAX_CHARS}
         rows={6}
         placeholder="Paste the text you want the bot to know."
-        className="w-full rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-2 text-sm outline-none transition focus:border-[#c9d0dd]"
       />
       <div className="flex items-center gap-3">
         <Button type="submit" disabled={!canSubmit}>
@@ -319,7 +319,7 @@ function TextTab({ botId }: { botId: string }) {
           {content.length.toLocaleString()} / {SOURCE_TEXT_MAX_CHARS.toLocaleString()}
         </span>
         {create.isError ? (
-          <span className="text-sm text-red-600">
+          <span className="text-sm text-[var(--danger)]">
             <PlanLimitMessage error={create.error} fallback="Could not add this text" />
           </span>
         ) : null}
@@ -360,20 +360,19 @@ function FaqTab({ botId }: { botId: string }) {
         maxLength={SOURCE_FAQ_QUESTION_MAX_CHARS}
         placeholder="Question a visitor might ask"
       />
-      <textarea
+      <Textarea
         value={answer}
         onChange={(event) => setAnswer(event.target.value)}
         maxLength={SOURCE_FAQ_ANSWER_MAX_CHARS}
         rows={4}
         placeholder="The answer, written the way you'd want it read back."
-        className="w-full rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-2 text-sm outline-none transition focus:border-[#c9d0dd]"
       />
       <div className="flex items-center gap-3">
         <Button type="submit" disabled={!canSubmit}>
           {create.isPending ? "Adding…" : "Add FAQ"}
         </Button>
         {create.isError ? (
-          <span className="text-sm text-red-600">
+          <span className="text-sm text-[var(--danger)]">
             <PlanLimitMessage error={create.error} fallback="Could not add this FAQ" />
           </span>
         ) : null}

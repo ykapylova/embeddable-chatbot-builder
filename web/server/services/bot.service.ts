@@ -39,7 +39,7 @@ const themeSchema = z
   .object({
     accentColor: z
       .string()
-      .regex(HEX_COLOR_PATTERN, "Accent colour must be a hex value like #4f46e5")
+      .regex(HEX_COLOR_PATTERN, "Accent colour must be a hex value like #e85c7b")
       .optional(),
     avatarUrl: z.string().trim().url("Avatar must be a valid URL").max(2048).nullable().optional(),
     placeholder: z.string().trim().max(THEME_PLACEHOLDER_MAX).optional(),

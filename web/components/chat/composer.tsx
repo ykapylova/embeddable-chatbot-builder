@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Send, Square } from "lucide-react";
 
+import { readableTextColor } from "lib/color-contrast";
 import { cn } from "lib/utils";
 
 export function Composer({
@@ -78,7 +79,7 @@ export function Composer({
             submit();
           }
         }}
-        className="max-h-32 min-h-9 flex-1 resize-none overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-2 text-sm outline-none transition focus:border-[#c9d0dd]"
+        className="max-h-32 min-h-9 flex-1 resize-none overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-2 text-sm transition focus:border-[var(--accent)]"
       />
 
       {isStreaming ? (
@@ -86,8 +87,8 @@ export function Composer({
           type="button"
           onClick={onStop}
           aria-label="Stop generating"
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white transition hover:opacity-90"
-          style={{ background: accentColor }}
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition hover:opacity-90 active:opacity-80"
+          style={{ background: accentColor, color: readableTextColor(accentColor) }}
         >
           <Square className="h-3.5 w-3.5" fill="currentColor" />
         </button>
@@ -97,9 +98,9 @@ export function Composer({
           aria-label="Send message"
           disabled={value.trim().length === 0}
           className={cn(
-            "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white transition hover:opacity-90 disabled:pointer-events-none disabled:opacity-40",
+            "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition hover:opacity-90 active:opacity-80 disabled:pointer-events-none disabled:opacity-40",
           )}
-          style={{ background: accentColor }}
+          style={{ background: accentColor, color: readableTextColor(accentColor) }}
         >
           <Send className="h-4 w-4" />
         </button>

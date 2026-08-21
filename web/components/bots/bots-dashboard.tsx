@@ -136,7 +136,7 @@ export function BotsDashboard() {
               Only you see this name — it is how you tell bots apart.
             </p>
             {create.isError ? (
-              <p className="mt-2 text-sm text-red-600">
+              <p className="mt-2 text-sm text-[var(--danger)]">
                 <PlanLimitMessage error={create.error} fallback="Could not create bot" />
               </p>
             ) : null}
@@ -148,7 +148,7 @@ export function BotsDashboard() {
 
       {bots.isError ? (
         <Card className="border border-[var(--border)] text-center">
-          <p className="text-sm text-red-600">
+          <p className="text-sm text-[var(--danger)]">
             {bots.error instanceof Error ? bots.error.message : "Could not load bots"}
           </p>
           <Button variant="outline" className="mt-3" onClick={() => bots.refetch()}>
