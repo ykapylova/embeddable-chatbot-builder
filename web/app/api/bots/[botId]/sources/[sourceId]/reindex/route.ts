@@ -16,7 +16,12 @@ export async function POST(_request: Request, context: RouteContext): Promise<Ne
   if (unwrapAccount(result)) return result;
 
   const { botId, sourceId } = await context.params;
-  const source = await sourceService.reindex(botId, result.account.id, sourceId);
+  const source = await sourceService.reindex(
+    botId,
+    result.account.id,
+    result.account.plan,
+    sourceId,
+  );
   if (!source) return jsonErr("Source not found", 404);
 
   return jsonOk(source);
