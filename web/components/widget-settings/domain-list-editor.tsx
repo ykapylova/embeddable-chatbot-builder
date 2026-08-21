@@ -1,13 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
 
-import { ApiError, updateBot } from "lib/api-client";
-import { appPaths } from "lib/api-paths";
+import { updateBot } from "lib/api-client";
 import { queryKeys } from "lib/query-keys";
+import { PlanLimitMessage } from "components/plan/plan-limit-message";
 import { usePlan } from "components/plan/use-plan";
 import { Button } from "components/ui/button";
 import { Input } from "components/ui/input";
@@ -35,8 +34,7 @@ export function DomainListEditor({ botId, domains }: { botId: string; domains: s
   const queryClient = useQueryClient();
   const { plan } = usePlan();
   const [value, setValue] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [errorCode, setErrorCode] = useState<string | undefined>(undefined);
+  const [error, setError] = useState<Error | null>(null);
 
   const mutation = useMutation({
     mutationFn: (nextDomains: string[]) => updateBot(botId, { allowedDomains: nextDomains }),
@@ -53,28 +51,19 @@ export function DomainListEditor({ botId, domains }: { botId: string; domains: s
   function handleAdd() {
     const validationError = validateDomain(value, domains);
     if (validationError) {
-      setError(validationError);
-      setErrorCode(undefined);
+      setError(new Error(validationError));
       return;
     }
     setError(null);
-    setErrorCode(undefined);
     mutation.mutate([...domains, normalizeDomain(value)], {
       onSuccess: () => setValue(""),
-      onError: (err) => {
-        setError(err instanceof ApiError ? err.message : "Could not add domain");
-        setErrorCode(err instanceof ApiError ? err.code : undefined);
-      },
+      onError: setError,
     });
   }
 
   function handleRemove(domain: string) {
     setError(null);
-    setErrorCode(undefined);
-    mutation.mutate(
-      domains.filter((d) => d !== domain),
-      { onError: (err) => setError(err instanceof ApiError ? err.message : "Could not remove domain") },
-    );
+    mutation.mutate(domains.filter((d) => d !== domain), { onError: setError });
   }
 
   return (
@@ -133,15 +122,7 @@ export function DomainListEditor({ botId, domains }: { botId: string; domains: s
       </div>
       {error ? (
         <p className="text-sm text-red-600">
-          {error}
-          {errorCode === "LIMIT_DOMAINS" ? (
-            <>
-              {" "}
-              <Link href={`${appPaths.billing()}?reason=LIMIT_DOMAINS`} className="underline underline-offset-2">
-                Upgrade plan
-              </Link>
-            </>
-          ) : null}
+          <PlanLimitMessage error={error} fallback="Could not update domains" />
         </p>
       ) : null}
     </div>

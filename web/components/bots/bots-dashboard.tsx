@@ -5,10 +5,11 @@ import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bot as BotIcon, FileText, Plus, ChevronRight, Layers, PauseCircle } from "lucide-react";
 
-import { ApiError, createBot, getBots } from "lib/api-client";
+import { createBot, getBots } from "lib/api-client";
 import { appPaths } from "lib/api-paths";
 import { BOT_NAME_MAX } from "lib/bot-defaults";
 import { queryKeys } from "lib/query-keys";
+import { PlanLimitMessage } from "components/plan/plan-limit-message";
 import { usePlan } from "components/plan/use-plan";
 import { Button } from "components/ui/button";
 import { Input } from "components/ui/input";
@@ -133,18 +134,9 @@ export function BotsDashboard() {
               Only you see this name — it is how you tell bots apart.
             </p>
             {create.isError ? (
-              create.error instanceof ApiError && create.error.code === "LIMIT_BOTS" ? (
-                <p className="mt-2 text-sm text-red-600">
-                  {create.error.message}{" "}
-                  <Link href={`${appPaths.billing()}?reason=LIMIT_BOTS`} className="underline underline-offset-2">
-                    Upgrade plan
-                  </Link>
-                </p>
-              ) : (
-                <p className="mt-2 text-sm text-red-600">
-                  {create.error instanceof Error ? create.error.message : "Could not create bot"}
-                </p>
-              )
+              <p className="mt-2 text-sm text-red-600">
+                <PlanLimitMessage error={create.error} fallback="Could not create bot" />
+              </p>
             ) : null}
           </form>
         </Card>
