@@ -67,8 +67,8 @@ export function AddSourcePanel({ botId }: { botId: string }) {
             onClick={() => setTab(option.value)}
             className={
               tab === option.value
-                ? "flex items-center gap-1.5 rounded-xl border border-[var(--accent)] bg-[var(--accent)] px-3 py-1.5 text-[11px] text-white"
-                : "flex items-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-1.5 text-[11px] transition hover:bg-[var(--panel-soft)]"
+                ? "flex items-center gap-1.5 rounded-xl border border-[var(--accent)] bg-[var(--accent)] px-3 py-1.5 text-sm text-white"
+                : "flex items-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-1.5 text-sm transition hover:bg-[var(--panel-soft)]"
             }
           >
             <option.icon className="h-3.5 w-3.5" />
@@ -305,7 +305,7 @@ function TextTab({ botId }: { botId: string }) {
         maxLength={SOURCE_TEXT_MAX_CHARS}
         rows={6}
         placeholder="Paste the text you want the bot to know."
-        className="w-full rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-2 text-xs outline-none transition focus:border-[#c9d0dd]"
+        className="w-full rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-2 text-sm outline-none transition focus:border-[#c9d0dd]"
       />
       <div className="flex items-center gap-3">
         <Button type="submit" disabled={!canSubmit}>
@@ -361,7 +361,7 @@ function FaqTab({ botId }: { botId: string }) {
         maxLength={SOURCE_FAQ_ANSWER_MAX_CHARS}
         rows={4}
         placeholder="The answer, written the way you'd want it read back."
-        className="w-full rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-2 text-xs outline-none transition focus:border-[#c9d0dd]"
+        className="w-full rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-2 text-sm outline-none transition focus:border-[#c9d0dd]"
       />
       <div className="flex items-center gap-3">
         <Button type="submit" disabled={!canSubmit}>
