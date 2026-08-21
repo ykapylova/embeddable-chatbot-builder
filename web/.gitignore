@@ -1,2 +1,5 @@
 .vercel
 .env*
+# The template carries placeholders only and must stay in version control —
+# it is the sole record of which variables the app needs.
+!.env.example
