@@ -1,4 +1,5 @@
 import { sourceRepository, type SourceRow } from "server/repositories/source.repository";
+import { invalidateAnswerCache } from "server/services/answer/cache";
 
 import { chunkText } from "./chunk.service";
 import { embedTexts } from "./embed.service";
@@ -53,6 +54,10 @@ export async function ingestSource(source: SourceRow, rawText: string): Promise<
     if (!updated) {
       throw new Error("Source was removed while it was being indexed");
     }
+
+    // The bot's knowledge just changed, so any answer cached against the old
+    // content is now potentially stale. Correctness over hit rate: drop it.
+    await invalidateAnswerCache(botId);
     return updated;
   } catch (error) {
     const message =

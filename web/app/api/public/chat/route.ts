@@ -6,6 +6,7 @@ import { botRepository } from "server/repositories/bot.repository";
 import { conversationRepository } from "server/repositories/conversation.repository";
 import { jsonErr } from "server/http/json-api";
 import { getAnswerProvider, usedCitations, type AnswerHistoryMessage, type RetrievedChunk } from "server/services/answer";
+import { lookupCachedAnswer, storeCachedAnswer } from "server/services/answer/cache";
 import { CREDIT_LIMIT_MESSAGE, chargeForAnswer, refundForAnswer } from "server/services/plan.service";
 import { corsHeaders, corsPreflight, withCors } from "server/services/widget/cors";
 import {
@@ -155,6 +156,21 @@ export async function POST(request: Request): Promise<Response> {
       request.signal.addEventListener("abort", onAbort);
 
       try {
+        // A repeated standalone question is served from the cache — no
+        // retrieval, no model call. Support widgets ask the same handful of
+        // questions constantly, so this is where the cache earns its keep.
+        const cached = await lookupCachedAnswer(bot.id, payload.message, history);
+        if (cached) {
+          keptCitations = cached.citations;
+          send({ type: "start", conversationId: conversation.id, citations: cached.citations });
+          assistantText = cached.answer;
+          send({ type: "delta", text: cached.answer });
+          answered = true;
+          usage = { tokens: 0, credits: 0 };
+          send({ type: "done", answered: true, usage, citations: cached.citations });
+          return;
+        }
+
         const chunks: RetrievedChunk[] = await findRelevantChunksForTurn(bot.id, payload.message, history);
 
         // An empty retrieval result is always a free, canned fallback — see
@@ -205,6 +221,12 @@ export async function POST(request: Request): Promise<Response> {
             }
 
             if (request.signal.aborted) break;
+          }
+
+          // Cache only a grounded, completed answer, so the next visitor asking
+          // the same question skips retrieval and the model entirely.
+          if (answered && keptCitations && keptCitations.length > 0) {
+            await storeCachedAnswer(bot.id, payload.message, history, assistantText, keptCitations);
           }
         }
       } catch (error) {

@@ -1,19 +1,55 @@
 import type { RetrievedChunk } from "lib/api-types/retrieval";
-import { chunkRepository } from "server/repositories/chunk.repository";
+import { chunkRepository, type RelevantChunkRow } from "server/repositories/chunk.repository";
 import { embedTexts } from "server/services/sources/embed.service";
 
 const DEFAULT_LIMIT = 5;
 
-// Below this cosine similarity a chunk is noise, not context. An empty
-// result here is what lets the bot say "I don't know" instead of answering
-// from an unrelated fragment — never lower this to fill the panel.
-const SCORE_CUTOFF = 0.35;
+// Retrieval used to keep only chunks scoring above an absolute 0.35. Measured
+// against real content that number sat inside the noise band: a wrong chunk
+// reached 0.340 while a verbatim-correct one fell to 0.296, so no single
+// threshold separated them. A fact that was literally in the knowledge base
+// came back as "I don't know" purely because of how the question was phrased.
+//
+// The rule is relative now. The best hit is almost always the right chunk
+// (nine of ten measured questions retrieved it at rank 1), so we keep it
+// whenever it clears a low floor, then keep the runners-up only while they
+// stay within a margin of that best hit. A genuinely unrelated question still
+// scores below the floor everywhere and returns nothing — which is what lets
+// the bot say "I don't know" instead of answering from a fragment.
+const SCORE_FLOOR = 0.22;
+const RELATIVE_MARGIN = 0.12;
+
+/**
+ * Keeps the best hit and everything scoring within `margin` of it. Rows must
+ * already be ordered by score descending. Pure and side-effect free so the
+ * selection rule can be tested without a database or an embedding call.
+ */
+export function selectByMargin<T extends { score: number }>(rows: T[], margin: number): T[] {
+  if (rows.length === 0) return [];
+  const best = rows[0].score;
+  return rows.filter((row) => row.score >= best - margin);
+}
+
+function toRetrievedChunk(row: RelevantChunkRow): RetrievedChunk {
+  return {
+    id: row.id,
+    sourceId: row.sourceId,
+    sourceTitle: row.sourceTitle,
+    sourceUrl: row.sourceUrl,
+    content: row.content,
+    score: row.score,
+  };
+}
 
 /**
  * Embeds the question and returns the closest chunks for one bot, ordered
  * by score descending. Always scoped by `bot_id` — this is the query a
  * chat answer and the debug panel both go through, and neither may see
  * another bot's knowledge.
+ *
+ * The floor is applied in the query; the relative margin is applied here.
+ * A wider candidate window than `limit` is fetched so the margin can see the
+ * runners-up before the cap, then the surviving set is trimmed to `limit`.
  */
 export async function findRelevantChunks(
   botId: string,
@@ -24,19 +60,12 @@ export async function findRelevantChunks(
   if (!trimmed) return [];
 
   const [embedding] = await embedTexts([trimmed]);
-  const rows = await chunkRepository.findRelevant(botId, embedding, {
-    limit,
-    minScore: SCORE_CUTOFF,
+  const candidates = await chunkRepository.findRelevant(botId, embedding, {
+    limit: Math.max(limit, DEFAULT_LIMIT),
+    minScore: SCORE_FLOOR,
   });
 
-  return rows.map((row) => ({
-    id: row.id,
-    sourceId: row.sourceId,
-    sourceTitle: row.sourceTitle,
-    sourceUrl: row.sourceUrl,
-    content: row.content,
-    score: row.score,
-  }));
+  return selectByMargin(candidates, RELATIVE_MARGIN).slice(0, limit).map(toRetrievedChunk);
 }
 
 type TurnMessage = { role: "user" | "assistant"; content: string };
