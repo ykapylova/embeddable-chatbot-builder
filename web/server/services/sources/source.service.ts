@@ -15,6 +15,7 @@ import {
   SOURCE_TEXT_MAX_CHARS,
   SOURCE_TITLE_MAX,
 } from "server/limits";
+import { invalidateAnswerCache } from "server/services/answer/cache";
 import { assertPlan } from "server/services/plan.service";
 import { uploadBytesToChatBucket } from "server/services/supabase-storage.service";
 
@@ -260,13 +261,16 @@ export const sourceService = {
   async remove(botId: string, accountId: string, sourceId: string): Promise<boolean> {
     const bot = await requireOwnedBot(botId, accountId);
     if (!bot) return false;
-
     const removed = await sourceRepository.remove(sourceId, botId);
     if (!removed) return false;
 
     await discardSourceBlobs([removed.storageKey]);
+    // Removing a source is a knowledge change too — drop any cached answers
+    // that might have leaned on it.
+    await invalidateAnswerCache(botId);
     return true;
   },
+
 
   async reindex(botId: string, accountId: string, plan: PlanId, sourceId: string): Promise<Source | null> {
     const bot = await requireOwnedBot(botId, accountId);

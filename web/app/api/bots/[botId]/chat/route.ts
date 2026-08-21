@@ -7,6 +7,7 @@ import { jsonErr } from "server/http/json-api";
 import { botRepository } from "server/repositories/bot.repository";
 import { conversationRepository } from "server/repositories/conversation.repository";
 import { getAnswerProvider, usedCitations, type AnswerHistoryMessage, type RetrievedChunk } from "server/services/answer";
+import { lookupCachedAnswer, storeCachedAnswer } from "server/services/answer/cache";
 import { CREDIT_LIMIT_MESSAGE, chargeForAnswer, refundForAnswer } from "server/services/plan.service";
 import { findRelevantChunksForTurn } from "server/services/retrieval.service";
 
@@ -101,6 +102,21 @@ export async function POST(request: Request, context: RouteContext): Promise<Res
       request.signal.addEventListener("abort", onAbort);
 
       try {
+        // A repeated standalone question is answered from the cache with no
+        // retrieval and no model call. The finally block still persists the
+        // turn, at zero credits — the win is latency, not money.
+        const cached = await lookupCachedAnswer(botId, payload.message, history);
+        if (cached) {
+          keptCitations = cached.citations;
+          send({ type: "start", conversationId: conversation.id, citations: cached.citations });
+          assistantText = cached.answer;
+          send({ type: "delta", text: cached.answer });
+          answered = true;
+          usage = { tokens: 0, credits: 0 };
+          send({ type: "done", answered: true, usage, citations: cached.citations });
+          return;
+        }
+
         const chunks: RetrievedChunk[] = await findRelevantChunksForTurn(
           botId,
           payload.message,
@@ -157,6 +173,12 @@ export async function POST(request: Request, context: RouteContext): Promise<Res
             }
 
             if (request.signal.aborted) break;
+          }
+
+          // Cache only a grounded, completed answer, so the next visitor asking
+          // the same question skips retrieval and the model entirely.
+          if (answered && keptCitations && keptCitations.length > 0) {
+            await storeCachedAnswer(botId, payload.message, history, assistantText, keptCitations);
           }
         }
       } catch (error) {
