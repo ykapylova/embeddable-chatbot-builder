@@ -1,3 +1,8 @@
+import type {
+  CheckoutSessionResponse,
+  PortalSessionResponse,
+  SessionStatusResponse,
+} from "lib/api-types/billing";
 import type { Bot, BotListItem, CreateBotBody, UpdateBotBody } from "lib/api-types/bot";
 import type { ChatTurnRequest } from "lib/api-types/chat";
 import type {
@@ -8,9 +13,10 @@ import type {
 } from "lib/api-types/conversation";
 import type { GapsResponse } from "lib/api-types/gaps";
 import type { LeadListResponse } from "lib/api-types/leads";
-import type { PlanUsage } from "lib/api-types/plan";
+import type { AccountPlan } from "lib/api-types/plan";
 import type { RetrievalDebugResponse } from "lib/api-types/retrieval";
 import type { CreateJsonSourceBody, Source } from "lib/api-types/source";
+import type { BillingInterval, PlanId, PlanPresentation } from "lib/plans";
 import { apiPaths } from "./api-paths";
 
 const jsonHeaders = { "Content-Type": "application/json" };
@@ -212,6 +218,40 @@ export async function postChatTurn(
   return res;
 }
 
-export function getPlan(): Promise<PlanUsage> {
-  return request<PlanUsage>(apiPaths.mePlan());
+export function getPlan(): Promise<AccountPlan> {
+  return request<AccountPlan>(apiPaths.mePlan());
+}
+
+/** The one plan catalogue — landing, pricing and `/billing` all read this. PROJECT_SPEC.md §10.5. */
+export function getPlanCatalogue(): Promise<PlanPresentation[]> {
+  return request<PlanPresentation[]>(apiPaths.plans());
+}
+
+/** First purchase only (Free → Pro/Business) — everything past that is the Billing Portal. */
+export function createCheckoutSession(
+  plan: Extract<PlanId, "pro" | "business">,
+  interval: BillingInterval,
+): Promise<string> {
+  return request<CheckoutSessionResponse>(apiPaths.billingCheckout(), {
+    method: "POST",
+    headers: jsonHeaders,
+    body: JSON.stringify({ plan, interval }),
+  }).then((res) => res.url);
+}
+
+/** Upgrade, downgrade, cancel, card changes — the Billing Portal handles all of it. */
+export function createPortalSession(): Promise<string> {
+  return request<PortalSessionResponse>(apiPaths.billingPortal(), {
+    method: "POST",
+    headers: jsonHeaders,
+    body: JSON.stringify({}),
+  }).then((res) => res.url);
+}
+
+/**
+ * Never trust the redirect from Stripe — this is the only source of truth
+ * for whether a checkout actually succeeded. PROJECT_SPEC.md §10.6.
+ */
+export function getCheckoutSessionStatus(sessionId: string): Promise<SessionStatusResponse> {
+  return request<SessionStatusResponse>(apiPaths.billingSessionStatus(sessionId));
 }

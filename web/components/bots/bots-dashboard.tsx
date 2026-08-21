@@ -5,16 +5,39 @@ import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bot as BotIcon, FileText, Plus, ChevronRight, Layers, PauseCircle } from "lucide-react";
 
-import { createBot, getBots } from "lib/api-client";
+import { ApiError, createBot, getBots } from "lib/api-client";
 import { appPaths } from "lib/api-paths";
 import { BOT_NAME_MAX } from "lib/bot-defaults";
 import { queryKeys } from "lib/query-keys";
+import { usePlan } from "components/plan/use-plan";
 import { Button } from "components/ui/button";
 import { Input } from "components/ui/input";
 import { Card } from "components/ui/card";
 import { TagPill } from "components/ui/tag-pill";
 import { IconBadge } from "components/ui/icon-badge";
 import { StatCard } from "components/ui/stat-card";
+
+/** PROJECT_SPEC.md §10.3 trigger #1 — 80% of credits consumed. */
+const CREDIT_WARNING_THRESHOLD = 0.8;
+
+function CreditsWarningBanner() {
+  const { plan, isPlanResolved } = usePlan();
+  if (!isPlanResolved || !plan) return null;
+  if (plan.credits.used / plan.credits.limit < CREDIT_WARNING_THRESHOLD) return null;
+
+  return (
+    <Link
+      href={`${appPaths.billing()}?reason=LIMIT_CREDITS`}
+      className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-[var(--chip-amber-fg)]/30 bg-[var(--chip-amber-bg)] px-4 py-3 text-sm text-[var(--chip-amber-fg)] transition hover:opacity-90"
+    >
+      <span>
+        You&apos;ve used {plan.credits.used.toLocaleString()} of {plan.credits.limit.toLocaleString()}{" "}
+        credits this period.
+      </span>
+      <span className="font-medium whitespace-nowrap">Upgrade →</span>
+    </Link>
+  );
+}
 
 export function BotsDashboard() {
   const queryClient = useQueryClient();
@@ -47,6 +70,8 @@ export function BotsDashboard() {
 
   return (
     <div className="mx-auto max-w-5xl px-2 py-6 sm:px-4 sm:py-8">
+      <CreditsWarningBanner />
+
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Your bots</h1>
@@ -108,9 +133,18 @@ export function BotsDashboard() {
               Only you see this name — it is how you tell bots apart.
             </p>
             {create.isError ? (
-              <p className="mt-2 text-sm text-red-600">
-                {create.error instanceof Error ? create.error.message : "Could not create bot"}
-              </p>
+              create.error instanceof ApiError && create.error.code === "LIMIT_BOTS" ? (
+                <p className="mt-2 text-sm text-red-600">
+                  {create.error.message}{" "}
+                  <Link href={`${appPaths.billing()}?reason=LIMIT_BOTS`} className="underline underline-offset-2">
+                    Upgrade plan
+                  </Link>
+                </p>
+              ) : (
+                <p className="mt-2 text-sm text-red-600">
+                  {create.error instanceof Error ? create.error.message : "Could not create bot"}
+                </p>
+              )
             ) : null}
           </form>
         </Card>

@@ -1,5 +1,8 @@
-import { planLimits } from "lib/plans";
+import Link from "next/link";
+
+import { appPaths } from "lib/api-paths";
 import { cn } from "lib/utils";
+import { usePlan } from "components/plan/use-plan";
 
 function formatChars(n: number): string {
   if (n >= 1_000_000) return `${Math.round(n / 1_000_000)}m`;
@@ -7,14 +10,12 @@ function formatChars(n: number): string {
   return String(n);
 }
 
-/**
- * Billing (T11/T12) has not landed yet, so there is no endpoint that reports
- * the account's actual plan. Free is the schema default for a new account
- * (`server/db/schema.ts`), so it is the honest number to show until the
- * account's real plan can be read from the API.
- */
+/** The real per-bot character limit, read from `GET /api/me/plan` — never a hardcoded plan. */
 export function KnowledgeCharUsage({ totalChars }: { totalChars: number }) {
-  const limit = planLimits("free").chars;
+  const { plan, isPlanResolved } = usePlan();
+  if (!isPlanResolved || !plan) return null;
+
+  const limit = plan.chars.limit;
   const percent = Math.min(100, (totalChars / limit) * 100);
   const isOverLimit = totalChars > limit;
 
@@ -25,7 +26,9 @@ export function KnowledgeCharUsage({ totalChars }: { totalChars: number }) {
           {formatChars(totalChars)} of {formatChars(limit)} used
         </span>
         {isOverLimit ? (
-          <span className="text-xs text-red-600">Over the free plan limit</span>
+          <Link href={`${appPaths.billing()}?reason=LIMIT_CHARS`} className="text-xs text-red-600 underline underline-offset-2">
+            Over your plan&apos;s limit — upgrade
+          </Link>
         ) : null}
       </div>
       <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-[var(--panel-soft)]">

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
-import { LayoutGrid, LogOut } from "lucide-react";
+import { CreditCard, LayoutGrid, LogOut } from "lucide-react";
 
 import { IconBadge } from "components/ui/icon-badge";
 import { PageTransition } from "components/providers/page-transition";
@@ -24,6 +24,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <LayoutGrid />
             </IconBadge>
             Dashboard
+          </Link>
+          <Link
+            href="/billing"
+            className="flex items-center gap-2.5 rounded-xl px-2 py-2 text-sm text-white/70 transition hover:bg-white/10 hover:text-white"
+          >
+            <IconBadge tone="chrome-active" size="sm">
+              <CreditCard />
+            </IconBadge>
+            Billing
           </Link>
         </nav>
 

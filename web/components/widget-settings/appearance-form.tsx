@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { getBot, updateBot } from "lib/api-client";
+import { appPaths } from "lib/api-paths";
 import {
   BOT_MESSAGE_MAX,
   BUBBLE_POSITIONS,
@@ -11,9 +13,9 @@ import {
   THEME_PLACEHOLDER_MAX,
   type BubblePosition,
 } from "lib/bot-defaults";
-import { planLimits } from "lib/plans";
 import { queryKeys } from "lib/query-keys";
 import { cn } from "lib/utils";
+import { usePlan } from "components/plan/use-plan";
 import { Button } from "components/ui/button";
 import { Input } from "components/ui/input";
 import { AppearancePreview } from "components/widget-settings/appearance-preview";
@@ -28,15 +30,10 @@ type FormState = {
   brandingEnabled: boolean;
 };
 
-/**
- * There is no endpoint yet that reports the account's real plan (billing is
- * later phases), so — same workaround as `KnowledgeCharUsage` — Free is the
- * honest assumption until one exists.
- */
-const assumedPlanLimits = planLimits("free");
-
 export function AppearanceForm({ botId }: { botId: string }) {
+  const router = useRouter();
   const queryClient = useQueryClient();
+  const { plan } = usePlan();
   const [draft, setDraft] = useState<Partial<FormState>>({});
 
   const bot = useQuery({
@@ -120,7 +117,7 @@ export function AppearanceForm({ botId }: { botId: string }) {
     save.reset();
   }
 
-  const brandingLocked = assumedPlanLimits.branding;
+  const brandingLocked = plan?.branding ?? true;
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
@@ -199,10 +196,13 @@ export function AppearanceForm({ botId }: { botId: string }) {
             type="button"
             role="switch"
             aria-checked={form.brandingEnabled}
-            disabled={brandingLocked}
-            onClick={() => patch({ brandingEnabled: !form.brandingEnabled })}
+            onClick={() =>
+              brandingLocked
+                ? router.push(`${appPaths.billing()}?reason=FEATURE_BRANDING`)
+                : patch({ brandingEnabled: !form.brandingEnabled })
+            }
             className={cn(
-              "relative h-6 w-11 rounded-full transition disabled:cursor-not-allowed disabled:opacity-50",
+              "relative h-6 w-11 rounded-full transition",
               form.brandingEnabled ? "bg-[var(--accent)]" : "bg-[var(--border)]",
             )}
           >

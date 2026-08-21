@@ -15,10 +15,16 @@ export const apiPaths = {
   leads: (botId: string) => `/api/bots/${botId}/leads`,
   leadsExport: (botId: string) => `/api/bots/${botId}/leads/export`,
   mePlan: () => "/api/me/plan",
+  plans: () => "/api/plans",
+  billingCheckout: () => "/api/billing/checkout",
+  billingPortal: () => "/api/billing/portal",
+  billingSessionStatus: (sessionId: string) =>
+    `/api/billing/session-status?sessionId=${encodeURIComponent(sessionId)}`,
 } as const;
 
 export const appPaths = {
   dashboard: () => "/dashboard",
+  billing: () => "/billing",
   bot: (botId: string) => `/bots/${botId}`,
   botSettings: (botId: string) => `/bots/${botId}/settings`,
   botKnowledge: (botId: string) => `/bots/${botId}/knowledge`,
