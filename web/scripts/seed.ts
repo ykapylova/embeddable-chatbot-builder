@@ -34,11 +34,10 @@ import {
   conversationsTable,
   leadsTable,
   messagesTable,
-  subscriptionsTable,
   usageCountersTable,
 } from "server/db/schema";
 import { env } from "server/env";
-import { rollingPeriodStart } from "server/services/plan.service";
+import { getPlanUsage } from "server/services/plan.service";
 import { sourceService } from "server/services/sources/source.service";
 
 import { DEMO_BOT, DEMO_CONVERSATIONS, DEMO_SOURCES, DOCSY_BOT, DOCSY_SOURCES } from "./seed-content";
@@ -312,55 +311,28 @@ async function writeHistory(
 }
 
 /**
- * Pro and Business need a subscription row, or `/billing` shows an upgrade card
- * to an account that is already paying. Free deliberately gets none.
+ * Records the period's usage against the account, and nothing else.
+ *
+ * An earlier draft also wrote a `subscriptions` row so the billing page would
+ * show a renewal date — which invented a state the product cannot produce: an
+ * `active` subscription with no Stripe customer behind it. Checkout then refused
+ * ("you already have a subscription, manage it in the portal") while the portal
+ * refused right back ("no billing history yet"), so both billing buttons on the
+ * demo account were dead ends pointing at each other.
+ *
+ * `accounts.plan` is the denormalised plan every gating check reads, so setting
+ * it alone is enough for a seeded Pro account to behave like one — and leaving
+ * the billing tables empty is the truth: this account has never paid. Upgrading
+ * it through Stripe from the demo is then a real first purchase.
  */
-async function writeBilling(accountId: string, plan: PlanId, credits: number): Promise<void> {
+async function writeUsage(accountId: string, plan: PlanId, credits: number): Promise<void> {
   const db = getDb();
-  const now = new Date();
 
-  let periodStart: string;
-  if (plan === "free") {
-    const [account] = await db
-      .select({ createdAt: accountsTable.createdAt })
-      .from(accountsTable)
-      .where(eq(accountsTable.id, accountId))
-      .limit(1);
-    periodStart = rollingPeriodStart(account.createdAt, now);
-  } else {
-    const start = new Date(now);
-    start.setUTCDate(1);
-    start.setUTCHours(0, 0, 0, 0);
-    const end = new Date(start);
-    end.setUTCMonth(end.getUTCMonth() + 1);
-
-    await db
-      .insert(subscriptionsTable)
-      .values({
-        accountId,
-        plan,
-        status: "active",
-        billingInterval: "month",
-        currentPeriodStart: start.toISOString(),
-        currentPeriodEnd: end.toISOString(),
-      })
-      .onConflictDoUpdate({
-        target: subscriptionsTable.accountId,
-        set: {
-          plan,
-          status: "active",
-          billingInterval: "month",
-          currentPeriodStart: start.toISOString(),
-          currentPeriodEnd: end.toISOString(),
-          cancelAtPeriodEnd: false,
-          paymentFailed: false,
-          graceUntil: null,
-          updatedAt: new Date().toISOString(),
-        },
-      });
-
-    periodStart = start.toISOString().slice(0, 10);
-  }
+  // Asking the app where the period starts, rather than recomputing it: an
+  // account that has paid before still has a subscription row, and its period
+  // wins over the rolling one. Guessing wrong writes the counter to a row
+  // nothing reads, and the dashboard shows 0 credits used.
+  const { periodStart } = await getPlanUsage(accountId, plan);
 
   await db
     .insert(usageCountersTable)
@@ -402,7 +374,7 @@ async function main() {
 
   // Overriding the counter deliberately desyncs it from the seeded messages, so
   // it is opt-in: it exists to stage the "out of credits" screens on demand.
-  await writeBilling(accountId, options.plan, options.creditsUsed ?? history.credits);
+  await writeUsage(accountId, options.plan, options.creditsUsed ?? history.credits);
 
   console.log(
     [

@@ -3,6 +3,7 @@ import { ZodError } from "zod";
 
 import { requireAccount, unwrapAccount } from "server/auth/require-account";
 import { jsonErr, jsonOk } from "server/http/json-api";
+import { BillingNotConfiguredError } from "server/services/billing/stripe-client";
 import { createCheckoutSession, ExistingSubscriberError } from "server/services/billing/checkout.service";
 
 export const runtime = "nodejs";
@@ -23,6 +24,11 @@ export async function POST(request: Request): Promise<NextResponse> {
     const url = await createCheckoutSession(result.account, body);
     return jsonOk({ url });
   } catch (error) {
+    // A deployment without Stripe keys is unfinished setup, not a broken app —
+    // 503 with the reason beats a 500 the reader cannot act on.
+    if (error instanceof BillingNotConfiguredError) {
+      return jsonErr(error.message, 503);
+    }
     if (error instanceof ZodError) {
       return jsonErr(error.issues[0]?.message ?? "Invalid payload", 422);
     }

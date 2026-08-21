@@ -1,12 +1,13 @@
 import type { BillingInterval, PlanId } from "lib/plans";
 import { env } from "server/env";
+import { BillingNotConfiguredError } from "server/services/billing/stripe-client";
 
 export type PurchasablePlan = Exclude<PlanId, "free">;
 
 export function resolvePriceId(plan: PurchasablePlan, interval: BillingInterval): string {
   const priceId = env.stripePriceIds[plan][interval];
   if (!priceId) {
-    throw new Error(`No Stripe price configured for ${plan}/${interval}`);
+    throw new BillingNotConfiguredError(`no price is set for ${plan}/${interval}`);
   }
   return priceId;
 }
