@@ -150,8 +150,8 @@ export function AppearanceForm({ botId }: { botId: string }) {
                 onClick={() => patch({ position: option.value })}
                 className={
                   form.position === option.value
-                    ? "rounded-xl border border-[var(--accent)] bg-[var(--accent)] px-3 py-1.5 text-[11px] text-white"
-                    : "rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-1.5 text-[11px] transition hover:bg-[var(--panel-soft)]"
+                    ? "rounded-xl border border-[var(--accent)] bg-[var(--accent)] px-3 py-1.5 text-sm text-white"
+                    : "rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-1.5 text-sm transition hover:bg-[var(--panel-soft)]"
                 }
               >
                 {option.label}

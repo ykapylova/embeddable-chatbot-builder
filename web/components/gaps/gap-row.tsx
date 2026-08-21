@@ -124,7 +124,7 @@ function GapComposer({
         rows={4}
         autoFocus
         placeholder="The answer, written the way you'd want it read back."
-        className="w-full rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-2 text-xs outline-none transition focus:border-[#c9d0dd]"
+        className="w-full rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-2 text-sm outline-none transition focus:border-[#c9d0dd]"
       />
       <div className="flex items-center gap-3">
         <Button type="submit" size="sm" disabled={!canSubmit}>
