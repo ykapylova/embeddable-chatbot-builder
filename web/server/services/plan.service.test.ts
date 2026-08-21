@@ -1,7 +1,34 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { rollingPeriodStart } from "./plan.service";
+import { charsAfterReplacing, rollingPeriodStart } from "./plan.service";
+
+describe("charsAfterReplacing", () => {
+  const sources = [
+    { id: "a", charCount: 40_000 },
+    { id: "b", charCount: 60_000 },
+  ];
+
+  it("adds a new source on top of everything already indexed", () => {
+    // A new row exists with charCount 0 by the time this runs, so excluding it
+    // by id changes nothing — the incoming length is the whole contribution.
+    assert.equal(charsAfterReplacing([...sources, { id: "new", charCount: 0 }], "new", 30_000), 130_000);
+  });
+
+  it("treats a reindex as a swap, not an addition", () => {
+    // Reindexing "b" with longer text must not count b's old 60,000 as well,
+    // or a source would be refused for its own weight.
+    assert.equal(charsAfterReplacing(sources, "b", 90_000), 130_000);
+  });
+
+  it("lets a reindex shrink the total", () => {
+    assert.equal(charsAfterReplacing(sources, "b", 1_000), 41_000);
+  });
+
+  it("counts an empty knowledge base as just the incoming source", () => {
+    assert.equal(charsAfterReplacing([], "new", 500), 500);
+  });
+});
 
 describe("rollingPeriodStart", () => {
   it("returns the account's signup date when the current period just started", () => {
