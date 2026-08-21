@@ -2,11 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useRef } from "react";
 
 import { cn } from "lib/utils";
 
 export function BotNav({ botId }: { botId: string }) {
   const pathname = usePathname();
+  const activeTabRef = useRef<HTMLAnchorElement>(null);
+
+  // The strip scrolls at narrow widths, and the later tabs start out past the
+  // right edge — landing on Install with "Playground" highlighted off-screen
+  // reads as being on the wrong page.
+  useEffect(() => {
+    activeTabRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [pathname]);
 
   const tabs = [
     // Exact match only: every other tab's href is also a prefix of this one.
@@ -29,6 +38,8 @@ export function BotNav({ botId }: { botId: string }) {
           <Link
             key={tab.href}
             href={tab.href}
+            ref={isActive ? activeTabRef : undefined}
+            aria-current={isActive ? "page" : undefined}
             className={cn(
               "shrink-0 rounded-full px-3.5 py-1.5 text-sm whitespace-nowrap transition",
               isActive

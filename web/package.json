@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "seed": "DOTENV_CONFIG_PATH=.env.local node --import tsx --require dotenv/config scripts/seed.ts",
     "lint": "eslint .",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "node --import tsx --test $(find server components -name '*.test.ts')",

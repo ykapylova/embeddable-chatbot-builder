@@ -34,8 +34,23 @@ export function Composer({
 
     textarea.style.height = "auto";
     const border = textarea.offsetHeight - textarea.clientHeight;
+
+    // An empty box still has to fit its placeholder. `scrollHeight` measures the
+    // value, which is empty, so a placeholder long enough to wrap — the owner
+    // gets 80 characters, and the widget panel is narrow — overflowed the single
+    // row and was clipped through the middle of the second line. Measuring it as
+    // if it were typed is the only way to learn how tall it renders at this
+    // width; the value is put back before the browser can paint either state.
+    if (value.length === 0 && textarea.placeholder) {
+      textarea.value = textarea.placeholder;
+      const placeholderHeight = textarea.scrollHeight;
+      textarea.value = "";
+      textarea.style.height = `${placeholderHeight + border}px`;
+      return;
+    }
+
     textarea.style.height = `${textarea.scrollHeight + border}px`;
-  }, [value]);
+  }, [value, placeholder]);
 
   function submit() {
     if (isStreaming || value.trim().length === 0) return;

@@ -1,11 +1,20 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { MessageCircle, Sparkles, X } from "lucide-react";
 
 import { cn } from "lib/utils";
 
 const BRAND_GRADIENT = "linear-gradient(100deg, var(--brand-1), var(--brand-2))";
+
+/**
+ * The public key of the bot this landing page demos, trained on the product's
+ * own documentation (PROJECT_SPEC.md §11, block 2). `npm run seed` creates that
+ * bot and prints the key to paste here. Unset — a fresh clone before seeding —
+ * the panel says so rather than pretending.
+ */
+const DEMO_BOT_KEY = process.env.NEXT_PUBLIC_DEMO_BOT_KEY?.trim();
 
 export function DemoWidget() {
   const [open, setOpen] = useState(false);
@@ -54,7 +63,9 @@ export function DemoWidget() {
           >
             <X className="h-3.5 w-3.5" />
           </button>
-          👋 Ask me about Docsy — this is a live preview of the widget.
+          {DEMO_BOT_KEY
+            ? "👋 Ask me about Docsy — this is the real widget, on our own docs."
+            : "👋 This is where the widget sits on your site."}
         </div>
       ) : null}
 
@@ -85,7 +96,7 @@ export function DemoWidget() {
 
 function ChatPanel({ onClose }: { onClose: () => void }) {
   return (
-    <div className="animate-chat-pop-in glow-ring flex w-[min(360px,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--panel)] shadow-2xl">
+    <div className="animate-chat-pop-in glow-ring flex h-[min(520px,calc(100dvh-8rem))] w-[min(360px,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--panel)] shadow-2xl">
       <div className="flex items-center justify-between border-b border-[var(--border)] bg-[var(--panel-soft)] px-4 py-3">
         <span className="text-sm font-medium">Docsy · trained on this page</span>
         <div className="flex items-center gap-2">
@@ -94,7 +105,7 @@ function ChatPanel({ onClose }: { onClose: () => void }) {
             style={{ background: BRAND_GRADIENT }}
           >
             <Sparkles className="h-3 w-3" />
-            Preview
+            Live
           </span>
           <button
             onClick={onClose}
@@ -106,28 +117,39 @@ function ChatPanel({ onClose }: { onClose: () => void }) {
         </div>
       </div>
 
-      <div className="space-y-3 px-4 py-5">
-        <div className="max-w-[85%] rounded-2xl bg-[var(--brand-soft)] px-3 py-2 text-sm text-[var(--foreground)]">
-          Hi — ask me anything about Docsy&apos;s setup, pricing, or the widget.
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2 border-t border-[var(--border)] p-3">
-        <input
-          disabled
-          placeholder="This box goes live once the widget ships"
-          className="flex-1 rounded-xl border border-[var(--border)] bg-[var(--panel-soft)] px-3 py-2 text-xs text-[var(--muted)] placeholder:text-[var(--muted)]"
+      {DEMO_BOT_KEY ? (
+        // The same iframe a customer's site gets from the snippet, pointed at
+        // our own bot: the landing page demos the product by using it.
+        <iframe
+          src={`/embed/${encodeURIComponent(DEMO_BOT_KEY)}`}
+          title="Ask Docsy"
+          className="min-h-0 flex-1 border-0"
         />
-        <button
-          disabled
-          className="rounded-xl bg-[var(--panel-soft)] px-3 py-2 text-xs text-[var(--muted)]"
-        >
-          Send
-        </button>
-      </div>
-      <p className="border-t border-[var(--border)] px-4 py-2 text-center text-xs text-[var(--muted)]">
-        Coming with the embeddable widget — not wired up yet, so we&apos;re not faking it.
+      ) : (
+        <UnconfiguredPanel />
+      )}
+    </div>
+  );
+}
+
+/**
+ * Shown when no demo bot is configured. It offers the real thing instead of a
+ * disabled input box that looks like a broken chat.
+ */
+function UnconfiguredPanel() {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col justify-between gap-4 p-4">
+      <p className="rounded-2xl bg-[var(--brand-soft)] px-3 py-2 text-sm text-[var(--foreground)]">
+        The demo bot on this deployment has not been set up yet — but yours takes about five
+        minutes, and the free plan does not ask for a card.
       </p>
+      <Link
+        href="/sign-up"
+        className="rounded-xl px-3 py-2 text-center text-sm font-medium text-white"
+        style={{ background: BRAND_GRADIENT }}
+      >
+        Build your bot free
+      </Link>
     </div>
   );
 }

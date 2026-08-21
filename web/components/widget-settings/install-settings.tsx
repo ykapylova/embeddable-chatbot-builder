@@ -66,6 +66,10 @@ export function InstallSettings({ botId }: { botId: string }) {
           </a>{" "}
           tab.
         </p>
+        <p className="mt-2 text-sm text-[var(--muted)]">
+          Trying it on your own machine? Add <code>localhost</code> and serve the page over{" "}
+          <code>http://</code> — a file opened straight from disk sends no domain, so it is refused.
+        </p>
       </section>
     </div>
   );
