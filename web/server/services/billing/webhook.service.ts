@@ -4,6 +4,7 @@ import { getDb } from "server/db/client";
 import { accountRepository } from "server/repositories/account.repository";
 import { stripeEventRepository } from "server/repositories/stripe-event.repository";
 import { subscriptionRepository, type SubscriptionPatch } from "server/repositories/subscription.repository";
+import { freeDowngradePatch } from "server/services/billing/free-downgrade";
 import { planForPriceId } from "server/services/billing/price-catalogue";
 import { getStripeClient, getStripeWebhookSecret } from "server/services/billing/stripe-client";
 
@@ -95,16 +96,15 @@ async function handleSubscriptionDeleted(tx: Executor, subscription: Stripe.Subs
 
   const accountId = await resolveAccountId(tx, customerId, subscription.metadata?.clerkUserId);
 
+  // `stripe_customer_id` stays: it is how `resolveAccountId` and the portal
+  // link still find this account, and how `/billing` knows there is history.
   await subscriptionRepository.upsert(
     accountId,
-    {
+    freeDowngradePatch({
       stripeSubscriptionId: null,
       status: subscription.status,
-      plan: "free",
       cancelAtPeriodEnd: false,
-      paymentFailed: false,
-      graceUntil: null,
-    },
+    }),
     tx,
   );
   await accountRepository.updatePlan(accountId, "free", tx);
