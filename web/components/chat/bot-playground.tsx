@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Bug } from "lucide-react";
 
 import { getBot, postChatTurn } from "lib/api-client";
+import { THEME_DEFAULTS } from "lib/bot-defaults";
 import { queryKeys } from "lib/query-keys";
 import { ChatSurface } from "components/chat/chat-surface";
 import { RetrievalDebugPanel } from "components/retrieval/retrieval-debug-panel";
@@ -52,7 +53,12 @@ export function BotPlayground({ botId }: { botId: string }) {
         <div className="h-[560px]">
           <ChatSurface
             variant="app"
-            theme={{ accentColor: "var(--accent)" }}
+            theme={{
+              accentColor: bot.data.theme.accentColor ?? THEME_DEFAULTS.accentColor,
+              avatarUrl: bot.data.theme.avatarUrl ?? null,
+              placeholder: bot.data.theme.placeholder ?? THEME_DEFAULTS.placeholder,
+              brandingEnabled: bot.data.brandingEnabled,
+            }}
             greeting={bot.data.welcomeMessage}
             sendMessage={({ message, conversationId, signal }) =>
               postChatTurn(botId, { message, conversationId }, signal)

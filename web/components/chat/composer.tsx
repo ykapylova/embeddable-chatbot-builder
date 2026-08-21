@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Send, Square } from "lucide-react";
 
 import { cn } from "lib/utils";
@@ -19,6 +20,23 @@ export function Composer({
   placeholder?: string;
   accentColor: string;
 }) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Driven by `value` rather than by `onChange` so the box also shrinks back
+  // when ChatSurface clears the input after a send. The height is reset to
+  // `auto` first: `scrollHeight` otherwise reports the tallest the box has
+  // ever been and the composer only ever grows. The border is added back on
+  // top because `box-sizing: border-box` counts it inside the height we set,
+  // while `scrollHeight` does not include it.
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    textarea.style.height = "auto";
+    const border = textarea.offsetHeight - textarea.clientHeight;
+    textarea.style.height = `${textarea.scrollHeight + border}px`;
+  }, [value]);
+
   function submit() {
     if (isStreaming || value.trim().length === 0) return;
     onSend();
@@ -33,6 +51,7 @@ export function Composer({
       }}
     >
       <textarea
+        ref={textareaRef}
         value={value}
         rows={1}
         maxLength={4000}
@@ -44,7 +63,7 @@ export function Composer({
             submit();
           }
         }}
-        className="max-h-32 min-h-9 flex-1 resize-none rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-2 text-sm outline-none transition focus:border-[#c9d0dd]"
+        className="max-h-32 min-h-9 flex-1 resize-none overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-2 text-sm outline-none transition focus:border-[#c9d0dd]"
       />
 
       {isStreaming ? (

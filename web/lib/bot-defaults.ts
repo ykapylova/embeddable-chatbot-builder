@@ -31,9 +31,9 @@ export const BUBBLE_POSITIONS = [
 export type BubblePosition = (typeof BUBBLE_POSITIONS)[number]["value"];
 
 /**
- * Must match the fallbacks in `server/services/widget/theme.ts` — that is what
- * a bot with an untouched `theme` column actually renders, so the appearance
- * form and its preview need to start from the same values.
+ * What a bot with an untouched `theme` column renders as:
+ * `server/services/widget/theme.ts` falls back to these, so the appearance
+ * form, its preview and the playground all start from the same values.
  */
 export const THEME_DEFAULTS = {
   accentColor: "#4f46e5",
