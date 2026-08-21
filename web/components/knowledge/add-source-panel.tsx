@@ -17,6 +17,7 @@ import {
   isAllowedSourceFileExtension,
 } from "lib/source-defaults";
 import type { Source } from "lib/api-types/source";
+import { PlanLimitMessage } from "components/plan/plan-limit-message";
 import { Button } from "components/ui/button";
 import { Input } from "components/ui/input";
 
@@ -33,7 +34,12 @@ type QueueItem = {
   id: string;
   file: File;
   status: "uploading" | "error";
-  error?: string;
+  /**
+   * The error object, not its message: a 402 carries the plan-limit code that
+   * decides whether the row gets an upgrade link, and flattening it to a
+   * string here would throw that away before anything can render it.
+   */
+  error?: Error;
 };
 
 function fileValidationError(file: File): string | null {
@@ -102,9 +108,9 @@ function FileTab({ botId }: { botId: string }) {
       mergeSource(queryClient, botId, source);
       setQueue((prev) => prev.filter((item) => item.id !== id));
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Upload failed";
+      const failure = error instanceof Error ? error : new Error("Upload failed");
       setQueue((prev) =>
-        prev.map((item) => (item.id === id ? { ...item, status: "error", error: message } : item)),
+        prev.map((item) => (item.id === id ? { ...item, status: "error", error: failure } : item)),
       );
     }
   }
@@ -114,7 +120,7 @@ function FileTab({ botId }: { botId: string }) {
       const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const invalid = fileValidationError(file);
       if (invalid) {
-        setQueue((prev) => [...prev, { id, file, status: "error", error: invalid }]);
+        setQueue((prev) => [...prev, { id, file, status: "error", error: new Error(invalid) }]);
         continue;
       }
       setQueue((prev) => [...prev, { id, file, status: "uploading" }]);
@@ -185,7 +191,9 @@ function FileTab({ botId }: { botId: string }) {
                 <span className="min-w-0">
                   <span className="block truncate">{item.file.name}</span>
                   {item.status === "error" ? (
-                    <span className="block text-xs text-red-600">{item.error}</span>
+                    <span className="block text-xs text-red-600">
+                      <PlanLimitMessage error={item.error} fallback="Upload failed" />
+                    </span>
                   ) : null}
                 </span>
               </span>
@@ -254,7 +262,7 @@ function UrlTab({ botId }: { botId: string }) {
       </Button>
       {create.isError ? (
         <p className="text-sm text-red-600 sm:self-center">
-          {create.error instanceof Error ? create.error.message : "Could not add this URL"}
+          <PlanLimitMessage error={create.error} fallback="Could not add this URL" />
         </p>
       ) : null}
     </form>
@@ -308,7 +316,7 @@ function TextTab({ botId }: { botId: string }) {
         </span>
         {create.isError ? (
           <span className="text-sm text-red-600">
-            {create.error instanceof Error ? create.error.message : "Could not add this text"}
+            <PlanLimitMessage error={create.error} fallback="Could not add this text" />
           </span>
         ) : null}
       </div>
@@ -361,7 +369,7 @@ function FaqTab({ botId }: { botId: string }) {
         </Button>
         {create.isError ? (
           <span className="text-sm text-red-600">
-            {create.error instanceof Error ? create.error.message : "Could not add this FAQ"}
+            <PlanLimitMessage error={create.error} fallback="Could not add this FAQ" />
           </span>
         ) : null}
       </div>
