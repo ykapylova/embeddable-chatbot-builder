@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 import { deleteBot, getBot, updateBot } from "lib/api-client";
 import { appPaths } from "lib/api-paths";
@@ -60,6 +61,7 @@ export function BotSettingsForm({ botId }: { botId: string }) {
         systemPrompt: values.systemPrompt.trim() || null,
       }),
     onSuccess: async (updated) => {
+      toast.success("Bot settings saved");
       queryClient.setQueryData(queryKeys.bots.detail(botId), updated);
       setDraft({});
       await queryClient.invalidateQueries({ queryKey: queryKeys.bots.all });
@@ -69,6 +71,7 @@ export function BotSettingsForm({ botId }: { botId: string }) {
   const remove = useMutation({
     mutationFn: () => deleteBot(botId),
     onSuccess: async () => {
+      toast.success("Bot deleted");
       await queryClient.invalidateQueries({ queryKey: queryKeys.bots.all });
       router.push(appPaths.dashboard());
     },

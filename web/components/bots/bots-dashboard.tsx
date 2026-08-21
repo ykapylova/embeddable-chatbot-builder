@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Bot as BotIcon, FileText, Plus, ChevronRight, Layers, PauseCircle } from "lucide-react";
 
 import { createBot, getBots } from "lib/api-client";
@@ -50,6 +51,7 @@ export function BotsDashboard() {
   const create = useMutation({
     mutationFn: createBot,
     onSuccess: async () => {
+      toast.success("Bot created successfully");
       setName("");
       setIsCreating(false);
       await queryClient.invalidateQueries({ queryKey: queryKeys.bots.all });

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Download } from "lucide-react";
 
 import { exportLeadsCsv } from "lib/api-client";
@@ -20,7 +21,10 @@ function downloadBlob(blob: Blob, filename: string): void {
 export function ExportLeadsButton({ botId }: { botId: string }) {
   const exportCsv = useMutation({
     mutationFn: () => exportLeadsCsv(botId),
-    onSuccess: (blob) => downloadBlob(blob, `leads-${botId}.csv`),
+    onSuccess: (blob) => {
+      toast.success("Leads exported");
+      downloadBlob(blob, `leads-${botId}.csv`);
+    },
   });
 
   return (

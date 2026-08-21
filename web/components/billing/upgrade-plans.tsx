@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Check } from "lucide-react";
 
 import { ApiError, createCheckoutSession, createPortalSession, getPlanCatalogue } from "lib/api-client";
@@ -45,6 +46,9 @@ export function UpgradePlans({ reason }: { reason: UpgradeReason | null }) {
     mutationFn: () => createPortalSession(),
     onSuccess: (url) => {
       window.location.href = url;
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Failed to open billing portal");
     },
   });
 

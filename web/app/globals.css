@@ -236,3 +236,48 @@ body {
     animation: none !important;
   }
 }
+
+/*
+ * Toast skin. Sonner injects its own stylesheet at runtime, so an app rule has to
+ * out-specify `[data-sonner-toast][data-styled="true"]` rather than rely on source
+ * order — hence the class stacked on top of both attributes.
+ */
+[data-sonner-toast][data-styled="true"].app-toast {
+  background: var(--panel);
+  color: var(--foreground);
+  border: none;
+  border-radius: 24px;
+  box-shadow:
+    0 8px 24px rgba(28, 27, 26, 0.12),
+    0 4px 12px rgba(28, 27, 26, 0.08);
+  padding: 16px 20px;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+[data-sonner-toast][data-styled="true"].app-toast [data-description] {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+[data-sonner-toast][data-styled="true"].app-toast-success {
+  border-left: 4px solid var(--accent);
+}
+
+[data-sonner-toast][data-styled="true"].app-toast-success [data-icon] {
+  color: var(--accent);
+}
+
+[data-sonner-toast][data-styled="true"].app-toast-error {
+  border-left: 4px solid #dc2626;
+}
+
+[data-sonner-toast][data-styled="true"].app-toast-error [data-icon] {
+  color: #dc2626;
+}
+
+[data-sonner-toast][data-styled="true"].app-toast-loading {
+  border-left: 4px solid var(--muted);
+}

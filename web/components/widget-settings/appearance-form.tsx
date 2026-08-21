@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 import { getBot, updateBot } from "lib/api-client";
 import { appPaths } from "lib/api-paths";
@@ -67,6 +68,7 @@ export function AppearanceForm({ botId }: { botId: string }) {
         brandingEnabled: values.brandingEnabled,
       }),
     onSuccess: async (updated) => {
+      toast.success("Appearance updated");
       queryClient.setQueryData(queryKeys.bots.detail(botId), updated);
       setDraft({});
       await queryClient.invalidateQueries({ queryKey: queryKeys.bots.all });
