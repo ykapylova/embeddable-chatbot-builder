@@ -69,16 +69,17 @@ body {
     "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
 }
 
-button,
-input,
-textarea {
-  font: inherit;
-}
-
 /*
  * Layered so Tailwind's utility classes (also layered, but later) win over this
  * default — an unlayered rule here would beat any `text-*` utility on a link
  * regardless of specificity, which silently broke colored nav links.
+ *
+ * The same trap caught `button, input, textarea { font: inherit }`, which used
+ * to sit above this block unlayered and therefore beat every `text-*`,
+ * `font-*` and `leading-*` utility on every form control in the app. It is
+ * gone rather than layered: Tailwind's preflight already emits the identical
+ * declaration — plus letter-spacing, colour and the rest — inside `@layer
+ * base`, where it loses to utilities the way it should.
  */
 @layer base {
   a {
