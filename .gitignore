@@ -39,3 +39,4 @@ coverage/
 tasks/
 .claude/
 .github/pull_request_template.md
+.vercel
