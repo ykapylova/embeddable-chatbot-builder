@@ -175,7 +175,7 @@ async function main(): Promise<void> {
       ["README", readme],
     ] as const) {
       const row = await sourceRepository.create({ botId: bot.id, type: "text", title });
-      const done = await ingestSource(row, text);
+      const done = await ingestSource(row, text, account.plan);
       console.log(`ingested ${title}: ${done.status}, ${done.chunkCount} chunks`);
     }
 
