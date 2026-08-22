@@ -40,6 +40,8 @@ next-env.d.ts
 # The repository holds the app; planning and process docs stay local.
 *.md
 !README.md
+# …except the files the demo actually uploads, which are product, not process.
+!web/scripts/demo-assets/*.md
 tasks/
 .claude/
 .github/pull_request_template.md

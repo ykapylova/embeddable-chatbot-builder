@@ -61,12 +61,12 @@ function TranscriptBubble({ message }: { message: ConversationMessage }) {
         <div className="mt-1 flex items-center gap-2 text-xs text-[var(--muted)]">
           <span>{formatTime(message.createdAt)}</span>
           {message.rating === "up" ? (
-            <span className="inline-flex items-center gap-1 text-emerald-600">
+            <span className="inline-flex items-center gap-1 text-[var(--success)]">
               <ThumbsUp className="h-3 w-3" fill="currentColor" />
             </span>
           ) : null}
           {message.rating === "down" ? (
-            <span className="inline-flex items-center gap-1 text-red-600">
+            <span className="inline-flex items-center gap-1 text-[var(--danger)]">
               <ThumbsDown className="h-3 w-3" fill="currentColor" />
             </span>
           ) : null}
@@ -114,7 +114,7 @@ export function ConversationTranscriptView({
 
       {transcript.isError ? (
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-6 text-center">
-          <p className="text-sm text-red-600">
+          <p className="text-sm text-[var(--danger)]">
             {transcript.error instanceof Error ? transcript.error.message : "Could not load this conversation"}
           </p>
           <Button variant="outline" className="mt-3" onClick={() => transcript.refetch()}>

@@ -80,7 +80,7 @@ export function CancelSubscriptionScreen() {
         <ul className="mt-4 space-y-2.5">
           {losses.map((loss) => (
             <li key={loss} className="flex items-start gap-2.5 text-sm">
-              <X className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
+              <X className="mt-0.5 h-4 w-4 shrink-0 text-[var(--danger)]" />
               {loss}
             </li>
           ))}
@@ -101,7 +101,7 @@ export function CancelSubscriptionScreen() {
         </div>
 
         {portal.isError ? (
-          <p className="mt-3 text-sm text-red-600">
+          <p className="mt-3 text-sm text-[var(--danger)]">
             {portal.error instanceof ApiError ? portal.error.message : "Could not open the billing portal"}
           </p>
         ) : null}

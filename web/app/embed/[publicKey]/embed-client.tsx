@@ -9,7 +9,6 @@ import type { ChatFeedback, ChatTheme, SendChatMessage } from "components/chat/t
 import { LeadCaptureBar } from "./lead-capture-bar";
 
 const VISITOR_ID_KEY = "docsy_visitor_id";
-const MOBILE_BREAKPOINT_PX = 480;
 
 function randomId(): string {
   return typeof crypto.randomUUID === "function"
@@ -118,29 +117,6 @@ export function EmbedClient({
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
   }, [hostParams.parentOrigin]);
-
-  // Iframe -> host: which layout mode the panel should render in. Driven by
-  // the iframe's own viewport rather than a CSS media query on the host page,
-  // so it stays correct regardless of how the host sizes the iframe element.
-  useEffect(() => {
-    let timeout: ReturnType<typeof setTimeout> | undefined;
-
-    function reportMode() {
-      const mode = window.innerWidth < MOBILE_BREAKPOINT_PX ? "fullscreen" : "panel";
-      postToParent({ type: "resize", mode });
-    }
-
-    reportMode();
-    function onResize() {
-      clearTimeout(timeout);
-      timeout = setTimeout(reportMode, 150);
-    }
-    window.addEventListener("resize", onResize);
-    return () => {
-      window.removeEventListener("resize", onResize);
-      clearTimeout(timeout);
-    };
-  }, [postToParent]);
 
   const watchForFallback = useCallback(
     async (response: Response, question: string) => {

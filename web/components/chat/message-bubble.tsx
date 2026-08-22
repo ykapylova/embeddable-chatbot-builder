@@ -3,6 +3,7 @@ import { CircleAlert, ExternalLink, RotateCw, ThumbsDown, ThumbsUp } from "lucid
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 
+import { readableTextColor } from "lib/color-contrast";
 import { cn } from "lib/utils";
 import type { ChatAssistantMessage, ChatMessage, ChatTheme } from "components/chat/types";
 
@@ -67,7 +68,7 @@ function FeedbackButtons({
         onClick={() => onRate("up")}
         className={cn(
           "rounded p-1 transition hover:bg-[var(--panel-soft)]",
-          message.rating === "up" ? "text-emerald-600" : "text-[var(--muted)]",
+          message.rating === "up" ? "text-[var(--success)]" : "text-[var(--muted)]",
         )}
       >
         <ThumbsUp className="h-3.5 w-3.5" fill={message.rating === "up" ? "currentColor" : "none"} />
@@ -79,7 +80,7 @@ function FeedbackButtons({
         onClick={() => onRate("down")}
         className={cn(
           "rounded p-1 transition hover:bg-[var(--panel-soft)]",
-          message.rating === "down" ? "text-red-600" : "text-[var(--muted)]",
+          message.rating === "down" ? "text-[var(--danger)]" : "text-[var(--muted)]",
         )}
       >
         <ThumbsDown className="h-3.5 w-3.5" fill={message.rating === "down" ? "currentColor" : "none"} />
@@ -108,7 +109,7 @@ function AssistantBubble({
           isFallback
             ? "border border-dashed border-[var(--chip-amber-fg)] bg-[var(--chip-amber-bg)] text-[var(--foreground)]"
             : "bg-[var(--panel-soft)] text-[var(--foreground)]",
-          message.status === "error" && isEmpty && "border border-red-200 bg-red-50",
+          message.status === "error" && isEmpty && "border border-[var(--danger-border)] bg-[var(--danger-soft)]",
         )}
       >
         {isEmpty && message.status === "streaming" ? (
@@ -153,7 +154,7 @@ function AssistantBubble({
       </div>
 
       {message.status === "error" ? (
-        <div className="mt-1.5 flex items-center gap-2 text-xs text-red-600">
+        <div className="mt-1.5 flex items-center gap-2 text-xs text-[var(--danger)]">
           <span>{message.errorMessage ?? "Something went wrong."}</span>
           <button
             type="button"
@@ -188,8 +189,8 @@ function ChatMessageBubbleImpl({
     return (
       <div className="flex justify-end">
         <div
-          className="max-w-[85%] rounded-2xl rounded-br-sm px-3 py-2 text-sm break-words text-white"
-          style={{ background: theme.accentColor }}
+          className="max-w-[85%] rounded-2xl rounded-br-sm px-3 py-2 text-sm break-words"
+          style={{ background: theme.accentColor, color: readableTextColor(theme.accentColor) }}
         >
           {message.content}
         </div>

@@ -40,7 +40,7 @@ export function LeadsPage({ botId }: { botId: string }) {
       <div className="space-y-4">
         <Header botId={botId} />
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-6 text-center">
-          <p className="text-sm text-red-600">
+          <p className="text-sm text-[var(--danger)]">
             {query.error instanceof Error ? query.error.message : "Could not load leads"}
           </p>
           <Button variant="outline" className="mt-3" onClick={() => query.refetch()}>

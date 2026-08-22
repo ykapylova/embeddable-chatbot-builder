@@ -1,11 +1,11 @@
 import { Code2, MessageSquare } from "lucide-react";
 
 import type { ConversationChannel } from "lib/api-types/conversation";
-import { cn } from "lib/utils";
+import { TagPill, type TagPillProps } from "components/ui/tag-pill";
 
-const CHANNEL_STYLE: Record<ConversationChannel, string> = {
-  app: "bg-[var(--panel-soft)] text-[var(--muted)]",
-  widget: "bg-[var(--chip-violet-bg)] text-[var(--chip-violet-fg)]",
+const CHANNEL_TONE: Record<ConversationChannel, NonNullable<TagPillProps["tone"]>> = {
+  app: "neutral",
+  widget: "violet",
 };
 
 const CHANNEL_LABEL: Record<ConversationChannel, string> = {
@@ -21,14 +21,9 @@ const CHANNEL_ICON: Record<ConversationChannel, React.ComponentType<{ className?
 export function ConversationChannelBadge({ channel }: { channel: ConversationChannel }) {
   const Icon = CHANNEL_ICON[channel];
   return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
-        CHANNEL_STYLE[channel],
-      )}
-    >
+    <TagPill tone={CHANNEL_TONE[channel]} className="px-2 py-0.5">
       <Icon className="h-3 w-3" />
       {CHANNEL_LABEL[channel]}
-    </span>
+    </TagPill>
   );
 }

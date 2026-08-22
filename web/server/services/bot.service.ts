@@ -30,11 +30,17 @@ const HEX_COLOR_PATTERN = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 // embedded on a domain its owner does not control.
 const DOMAIN_PATTERN = /^(?!-)[a-z0-9-]{1,63}(?<!-)(\.(?!-)[a-z0-9-]{1,63}(?<!-))+$/i;
 
+// `localhost` has no dot and so cannot match the pattern, which left the widget
+// impossible to try out on the machine you are building the site on. It is safe
+// to allow: the check is host equality, so this entry only ever matches a page
+// served from the reader's own machine.
+const LOCAL_HOSTNAME = "localhost";
+
 const themeSchema = z
   .object({
     accentColor: z
       .string()
-      .regex(HEX_COLOR_PATTERN, "Accent colour must be a hex value like #4f46e5")
+      .regex(HEX_COLOR_PATTERN, "Accent colour must be a hex value like #e85c7b")
       .optional(),
     avatarUrl: z.string().trim().url("Avatar must be a valid URL").max(2048).nullable().optional(),
     placeholder: z.string().trim().max(THEME_PLACEHOLDER_MAX).optional(),
@@ -50,7 +56,10 @@ const domainSchema = z
   .max(253, "Domain is too long")
   .refine((v) => !/^[a-z]+:\/\//i.test(v), "Enter a hostname, not a URL — no protocol")
   .refine((v) => !v.includes("/"), "Enter a hostname, not a URL — no path")
-  .refine((v) => DOMAIN_PATTERN.test(v), "Not a valid domain, e.g. app.example.com");
+  .refine(
+    (v) => v === LOCAL_HOSTNAME || DOMAIN_PATTERN.test(v),
+    "Not a valid domain, e.g. app.example.com",
+  );
 
 const allowedDomainsSchema = z.array(domainSchema).superRefine((domains, ctx) => {
   const seen = new Set<string>();

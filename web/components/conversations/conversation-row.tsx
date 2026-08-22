@@ -3,6 +3,7 @@ import { ThumbsDown, ThumbsUp } from "lucide-react";
 
 import type { ConversationListItem } from "lib/api-types/conversation";
 import { appPaths } from "lib/api-paths";
+import { TagPill } from "components/ui/tag-pill";
 import { ConversationChannelBadge } from "components/conversations/conversation-channel-badge";
 
 function formatTime(iso: string): string {
@@ -34,14 +35,14 @@ export function ConversationRow({ botId, item }: { botId: string; item: Conversa
                 </span>
               ) : null}
               {item.downvotes > 0 ? (
-                <span className="inline-flex items-center gap-1 text-red-600">
+                <span className="inline-flex items-center gap-1 text-[var(--danger)]">
                   <ThumbsDown className="h-3 w-3" /> {item.downvotes}
                 </span>
               ) : null}
               {item.unresolved ? (
-                <span className="rounded-full bg-[var(--chip-amber-bg)] px-2 py-0.5 font-medium text-[var(--chip-amber-fg)]">
+                <TagPill tone="amber" className="px-2 py-0.5">
                   Unresolved
-                </span>
+                </TagPill>
               ) : null}
               {item.pageUrl ? <span className="truncate">{item.pageUrl}</span> : null}
             </div>

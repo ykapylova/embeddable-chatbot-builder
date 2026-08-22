@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 
+import { readableTextColor } from "lib/color-contrast";
+
 type LeadState = "idle" | "submitting" | "sent" | "error";
 
 export function LeadCaptureBar({
@@ -74,19 +76,19 @@ export function LeadCaptureBar({
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           placeholder="you@example.com"
-          className="min-w-0 flex-1 rounded-md border border-[var(--border)] bg-[var(--panel)] px-2 py-1.5 text-xs outline-none focus:border-[#c9d0dd]"
+          className="min-w-0 flex-1 rounded-md border border-[var(--border)] bg-[var(--panel)] px-2 py-1.5 text-xs transition focus:border-[var(--accent)]"
         />
         <button
           type="submit"
           disabled={state === "submitting"}
-          className="shrink-0 rounded-md px-2.5 py-1.5 text-xs font-medium text-white transition hover:opacity-90 disabled:opacity-50"
-          style={{ background: accentColor }}
+          className="shrink-0 rounded-md px-2.5 py-1.5 text-xs font-medium transition hover:opacity-90 active:opacity-80 disabled:opacity-50"
+          style={{ background: accentColor, color: readableTextColor(accentColor) }}
         >
           {state === "submitting" ? "Sending…" : "Notify me"}
         </button>
       </form>
 
-      {state === "error" ? <p className="mt-1 text-red-600">Could not send — try again.</p> : null}
+      {state === "error" ? <p className="mt-1 text-[var(--danger)]">Could not send — try again.</p> : null}
     </div>
   );
 }

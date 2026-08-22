@@ -80,7 +80,7 @@ function SourceRow({ botId, source }: { botId: string; source: Source }) {
               <span>{formatIndexedAt(source)}</span>
             </div>
             {source.status === "failed" && source.error ? (
-              <p className="mt-1.5 text-xs text-red-600">
+              <p className="mt-1.5 text-xs text-[var(--danger)]">
                 {source.error}
                 {/* Every other plan limit in the app offers a way out of itself;
                     a limit that arrives as a stored row should not be the one
@@ -99,7 +99,7 @@ function SourceRow({ botId, source }: { botId: string; source: Source }) {
               </p>
             ) : null}
             {retry.isError ? (
-              <p className="mt-1.5 text-xs text-red-600">
+              <p className="mt-1.5 text-xs text-[var(--danger)]">
                 {retry.error instanceof Error ? retry.error.message : "Retry failed"}
               </p>
             ) : null}
@@ -155,7 +155,7 @@ function SourceRow({ botId, source }: { botId: string; source: Source }) {
       ) : null}
 
       {remove.isError ? (
-        <p className="mt-2 text-xs text-red-600">
+        <p className="mt-2 text-xs text-[var(--danger)]">
           {remove.error instanceof Error ? remove.error.message : "Could not delete this source"}
         </p>
       ) : null}

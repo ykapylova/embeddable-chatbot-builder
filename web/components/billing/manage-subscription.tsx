@@ -42,7 +42,7 @@ export function ManageSubscription() {
       ) : null}
 
       {portal.isError ? (
-        <p className="w-full text-sm text-red-600">
+        <p className="w-full text-sm text-[var(--danger)]">
           {portal.error instanceof ApiError ? portal.error.message : "Could not open the billing portal"}
         </p>
       ) : null}

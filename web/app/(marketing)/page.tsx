@@ -7,7 +7,7 @@ import { FeatureCards } from "components/marketing/feature-cards";
 import { FinalCta } from "components/marketing/final-cta";
 import { Hero } from "components/marketing/hero";
 import { HowItWorks } from "components/marketing/how-it-works";
-import { LiveDemoPlaceholder } from "components/marketing/live-demo-placeholder";
+import { LiveDemo } from "components/marketing/live-demo";
 import { PricingSection } from "components/marketing/pricing-section";
 
 export default async function MarketingPage() {
@@ -17,7 +17,7 @@ export default async function MarketingPage() {
   return (
     <>
       <Hero signedIn={signedIn} />
-      <LiveDemoPlaceholder />
+      <LiveDemo />
       <HowItWorks />
       <FeatureCards />
       <EmbedSnippet />

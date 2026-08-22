@@ -27,7 +27,7 @@ export function InstallSettings({ botId }: { botId: string }) {
   if (bot.isError) {
     return (
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-6 text-center">
-        <p className="text-sm text-red-600">
+        <p className="text-sm text-[var(--danger)]">
           {bot.error instanceof Error ? bot.error.message : "Could not load this bot"}
         </p>
         <Button variant="outline" className="mt-3" onClick={() => bot.refetch()}>
@@ -65,6 +65,10 @@ export function InstallSettings({ botId }: { botId: string }) {
             Appearance
           </a>{" "}
           tab.
+        </p>
+        <p className="mt-2 text-sm text-[var(--muted)]">
+          Trying it on your own machine? Add <code>localhost</code> and serve the page over{" "}
+          <code>http://</code> — a file opened straight from disk sends no domain, so it is refused.
         </p>
       </section>
     </div>

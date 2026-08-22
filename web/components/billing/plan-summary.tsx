@@ -39,7 +39,7 @@ export function PlanSummary() {
   if (error) {
     return (
       <Card className="border border-[var(--border)] text-center">
-        <p className="text-sm text-red-600">{error}</p>
+        <p className="text-sm text-[var(--danger)]">{error}</p>
         <Button variant="outline" className="mt-3" onClick={() => refetch()}>
           Try again
         </Button>
@@ -57,7 +57,7 @@ export function PlanSummary() {
   return (
     <div className="space-y-4">
       {plan.billing.paymentFailed ? (
-        <div className="flex items-center gap-2.5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="flex items-center gap-2.5 rounded-2xl border border-[var(--danger-border)] bg-[var(--danger-soft)] px-4 py-3 text-sm text-[var(--danger)]">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           <span>
             Your last payment failed. You keep full access for a 7-day grace period — update your card
@@ -96,7 +96,7 @@ export function PlanSummary() {
           >
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/10">
               <div
-                className={cn("h-full rounded-full", creditsOver ? "bg-red-600" : "bg-current")}
+                className={cn("h-full rounded-full", creditsOver ? "bg-[var(--danger)]" : "bg-current")}
                 style={{ width: `${creditsPercent}%` }}
               />
             </div>

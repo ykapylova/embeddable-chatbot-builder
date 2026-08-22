@@ -62,7 +62,7 @@ export function RetrievalDebugPanel({ botId }: { botId: string }) {
 
         {search.isError ? (
           <div className="rounded-lg border border-[var(--border)] p-4 text-center">
-            <p className="text-sm text-red-600">
+            <p className="text-sm text-[var(--danger)]">
               {search.error instanceof Error ? search.error.message : "Could not run retrieval"}
             </p>
             <Button variant="outline" className="mt-3" onClick={() => search.mutate(submitted)}>

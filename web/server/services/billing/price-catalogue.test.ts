@@ -4,6 +4,7 @@ import { describe, it } from "node:test";
 import { env } from "server/env";
 
 import { planForPriceId, resolvePriceId } from "./price-catalogue";
+import { BillingNotConfiguredError } from "./stripe-client";
 
 const configuredProMonthly = env.stripePriceIds.pro.month;
 
@@ -30,5 +31,16 @@ describe("price-catalogue", () => {
     } else {
       assert.throws(() => resolvePriceId("pro", "month"));
     }
+  });
+
+  // The routes answer 503 with the reason on this type and 500 on anything
+  // else, so a plain Error here would be a dead-end "Could not start checkout"
+  // on a deployment that has simply not set Stripe up yet.
+  it("names the missing configuration rather than failing anonymously", () => {
+    assert.throws(
+      () => resolvePriceId("business", "year"),
+      (error: unknown) =>
+        error instanceof BillingNotConfiguredError && /business\/year/.test(error.message),
+    );
   });
 });
