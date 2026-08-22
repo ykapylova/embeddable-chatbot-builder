@@ -7,6 +7,7 @@ import { planForPriceId, resolvePriceId } from "./price-catalogue";
 import { BillingNotConfiguredError } from "./stripe-client";
 
 const configuredProMonthly = env.stripePriceIds.pro.month;
+const configuredBusinessYearly = env.stripePriceIds.business.year;
 
 /**
  * "The build must not require Stripe env vars" is a requirement, so it is a
@@ -35,8 +36,14 @@ describe("price-catalogue", () => {
 
   // The routes answer 503 with the reason on this type and 500 on anything
   // else, so a plain Error here would be a dead-end "Could not start checkout"
-  // on a deployment that has simply not set Stripe up yet.
+  // on a deployment that has simply not set Stripe up yet. The naming is only
+  // observable where the price is genuinely missing, which is the `npm test`
+  // run; with `.env.local` loaded there is nothing to name.
   it("names the missing configuration rather than failing anonymously", () => {
+    if (configuredBusinessYearly) {
+      assert.equal(resolvePriceId("business", "year"), configuredBusinessYearly);
+      return;
+    }
     assert.throws(
       () => resolvePriceId("business", "year"),
       (error: unknown) =>
