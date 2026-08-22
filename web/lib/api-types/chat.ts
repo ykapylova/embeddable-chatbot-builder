@@ -8,6 +8,11 @@ export type ChatTurnRequest = {
   /** Omit to start a new conversation. */
   conversationId?: string;
   message: string;
+  /**
+   * Idempotency key for this turn. Stable across the client's own Retry, so
+   * the server replays the stored answer instead of generating a second one.
+   */
+  requestId?: string;
 };
 
 export type ChatCitation = {

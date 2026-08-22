@@ -52,6 +52,12 @@ export type ChatSession = {
 export type SendChatMessage = (params: {
   message: string;
   conversationId: string | undefined;
+  /**
+   * Idempotency key for this turn — the assistant message's own id, so it is
+   * new for a new question and unchanged when Retry re-sends it. Without it a
+   * retry after a stream that died post-generation bills the turn twice.
+   */
+  requestId: string;
   signal: AbortSignal;
 }) => Promise<Response>;
 

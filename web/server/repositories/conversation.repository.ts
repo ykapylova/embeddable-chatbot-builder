@@ -18,6 +18,25 @@ export type ConversationPageFilter = {
 
 export type ConversationMessageStats = { messageCount: number; upvotes: number; downvotes: number };
 
+/** Postgres `unique_violation`. */
+const UNIQUE_VIOLATION = "23505";
+
+/**
+ * Drizzle wraps the driver's error, so the `code` that identifies a unique
+ * violation sits on the cause rather than on what is thrown — checking only the
+ * top level turned a lost race into a 500.
+ */
+function isUniqueViolation(error: unknown): boolean {
+  for (let current: unknown = error, depth = 0; current && depth < 5; depth++) {
+    if (typeof current !== "object") return false;
+    if ((current as { code?: unknown }).code === UNIQUE_VIOLATION) return true;
+    const next = (current as { cause?: unknown }).cause;
+    if (next === current) return false;
+    current = next;
+  }
+  return false;
+}
+
 export const conversationRepository = {
   /**
    * The only way to load a conversation: always scoped to the bot it belongs
@@ -166,18 +185,64 @@ export const conversationRepository = {
   },
 
   /**
-   * Appends a message and bumps `lastMessageAt` in the same transaction, so
-   * the conversation list ordering can never see one without the other.
+   * The assistant turn already recorded for this idempotency key, if any.
+   * A Retry of a turn whose stream died after the model had run finds it here
+   * and replays it instead of generating — and charging — a second time.
    */
-  async appendMessage(values: MessageInsert): Promise<MessageRow> {
+  async findTurnByRequestId(conversationId: string, requestId: string): Promise<MessageRow | null> {
     const db = getDb();
-    return db.transaction(async (tx) => {
-      const [row] = await tx.insert(messagesTable).values(values).returning();
-      await tx
-        .update(conversationsTable)
-        .set({ lastMessageAt: new Date().toISOString() })
-        .where(eq(conversationsTable.id, values.conversationId));
-      return row;
-    });
+    const [row] = await db
+      .select()
+      .from(messagesTable)
+      .where(
+        and(
+          eq(messagesTable.conversationId, conversationId),
+          eq(messagesTable.requestId, requestId),
+        ),
+      )
+      .limit(1);
+    return row ?? null;
+  },
+
+  /**
+   * Writes the question and its answer as one unit and bumps `lastMessageAt`,
+   * all in the same transaction — the conversation list ordering can never see
+   * one without the other, and a rejected answer never leaves an orphan
+   * question behind.
+   *
+   * Returns null when the assistant row loses the unique index on
+   * `(conversation_id, request_id)`: a concurrent request carrying the same
+   * idempotency key already stored this turn, so this one must not duplicate
+   * it. The index is doing the work a lock would otherwise have to.
+   */
+  async appendTurn(values: {
+    conversationId: string;
+    question: string;
+    assistant: Omit<MessageInsert, "conversationId" | "role" | "content"> & { content: string };
+  }): Promise<MessageRow | null> {
+    const db = getDb();
+    try {
+      return await db.transaction(async (tx) => {
+        await tx.insert(messagesTable).values({
+          conversationId: values.conversationId,
+          role: "user",
+          content: values.question,
+        });
+
+        const [row] = await tx
+          .insert(messagesTable)
+          .values({ ...values.assistant, conversationId: values.conversationId, role: "assistant" })
+          .returning();
+
+        await tx
+          .update(conversationsTable)
+          .set({ lastMessageAt: new Date().toISOString() })
+          .where(eq(conversationsTable.id, values.conversationId));
+        return row;
+      });
+    } catch (error) {
+      if (isUniqueViolation(error)) return null;
+      throw error;
+    }
   },
 };

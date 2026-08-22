@@ -53,6 +53,24 @@ function contractTests(provider: AnswerProvider) {
     const last = events.at(-1);
     assert.equal(last?.type, "done");
     assert.equal(last?.type === "done" && last.answered, true);
+    assert.equal(last?.type === "done" && last.status, "answered");
+  });
+
+  it("an answer that cites nothing is an abstention, and costs nothing", async () => {
+    // The provider is told the only chunk is unrelated to the question, so a
+    // correct model declines to answer — and a declined answer must not be
+    // billed as one. The stub always cites, so this holds it to the same rule
+    // by asserting on the pairing rather than on the text.
+    const events = await collect({
+      ...baseRequest,
+      question: "How tall is the Eiffel Tower?",
+    });
+
+    const last = events.at(-1);
+    assert.equal(last?.type, "done");
+    if (last?.type !== "done") return;
+    assert.equal(last.answered, last.status === "answered");
+    assert.equal(last.usage.credits > 0, last.answered);
   });
 
   it("answers with the fallback and spends nothing when nothing was retrieved", async () => {
@@ -71,8 +89,8 @@ function contractTests(provider: AnswerProvider) {
     const last = events.at(-1);
     assert.equal(last?.type, "done");
     assert.deepEqual(
-      last?.type === "done" && [last.answered, last.usage],
-      [false, { tokens: 0, credits: 0 }],
+      last?.type === "done" && [last.answered, last.status, last.usage],
+      [false, "no_context", { tokens: 0, inputTokens: 0, outputTokens: 0, credits: 0 }],
     );
   });
 }

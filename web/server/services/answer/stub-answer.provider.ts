@@ -61,7 +61,12 @@ export const stubAnswerProvider: AnswerProvider = {
     if (mode === "empty" || request.chunks.length === 0) {
       yield { type: "start", citations: [] };
       yield { type: "delta", text: request.fallbackMessage };
-      yield { type: "done", answered: false, usage: { tokens: 0, credits: 0 } };
+      yield {
+        type: "done",
+        answered: false,
+        status: "no_context",
+        usage: { tokens: 0, inputTokens: 0, outputTokens: 0, credits: 0 },
+      };
       return;
     }
 
@@ -87,10 +92,17 @@ export const stubAnswerProvider: AnswerProvider = {
       yield { type: "delta", text: pieces[i] };
     }
 
+    const tokens = estimateTokens(answer);
     yield {
       type: "done",
       answered: true,
-      usage: { tokens: estimateTokens(answer), credits: creditCost(request.model) },
+      status: "answered",
+      usage: {
+        tokens,
+        inputTokens: estimateTokens(request.chunks.map((c) => c.content).join(" ")),
+        outputTokens: tokens,
+        credits: creditCost(request.model),
+      },
     };
   },
 };

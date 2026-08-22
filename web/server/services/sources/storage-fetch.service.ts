@@ -12,12 +12,12 @@ export async function downloadFromChatBucket(objectPath: string): Promise<Buffer
     signedUrl = await getSignedUrlForPath(objectPath, DOWNLOAD_URL_TTL_SEC);
   } catch (error) {
     console.error("[downloadFromChatBucket] signed url", error instanceof Error ? error.message : error);
-    throw new SourceContentError("Could not read the stored content for this source.");
+    throw new SourceContentError("Could not read the stored content for this source.", "STORAGE_FAILED");
   }
 
   const response = await fetch(signedUrl);
   if (!response.ok) {
-    throw new SourceContentError("Could not read the stored content for this source.");
+    throw new SourceContentError("Could not read the stored content for this source.", "STORAGE_FAILED");
   }
 
   const buffer = await response.arrayBuffer();

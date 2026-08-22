@@ -1,8 +1,9 @@
-import type { RetrievedChunk } from "lib/api-types/retrieval";
+import type { RetrievalCandidate, RetrievedChunk } from "lib/api-types/retrieval";
 import { chunkRepository, type RelevantChunkRow } from "server/repositories/chunk.repository";
+import { ANSWER_BUDGET } from "server/services/answer/budget";
 import { embedTexts } from "server/services/sources/embed.service";
 
-const DEFAULT_LIMIT = 5;
+const DEFAULT_LIMIT = ANSWER_BUDGET.contextChunks;
 
 // Retrieval used to keep only chunks scoring above an absolute 0.35. Measured
 // against real content that number sat inside the noise band: a wrong chunk
@@ -16,8 +17,14 @@ const DEFAULT_LIMIT = 5;
 // stay within a margin of that best hit. A genuinely unrelated question still
 // scores below the floor everywhere and returns nothing — which is what lets
 // the bot say "I don't know" instead of answering from a fragment.
-const SCORE_FLOOR = 0.22;
-const RELATIVE_MARGIN = 0.12;
+export const SCORE_FLOOR = 0.22;
+export const RELATIVE_MARGIN = 0.12;
+
+/**
+ * How many rows the debug panel looks at. Wider than the answer path on
+ * purpose: its whole job is to show the near-misses the answer path discarded.
+ */
+const DEBUG_CANDIDATE_LIMIT = 10;
 
 /**
  * Keeps the best hit and everything scoring within `margin` of it. Rows must
@@ -66,6 +73,45 @@ export async function findRelevantChunks(
   });
 
   return selectByMargin(candidates, RELATIVE_MARGIN).slice(0, limit).map(toRetrievedChunk);
+}
+
+/**
+ * The same selection, but reporting what it threw away and why.
+ *
+ * The answer path applies the floor inside the query, so a chunk that scored
+ * 0.19 never comes back at all — which made the one screen built to explain
+ * retrieval unable to tell "found, but below the floor" apart from "nothing in
+ * the knowledge base". This runs the identical rule over an unfiltered
+ * candidate list and labels each row instead of dropping it.
+ */
+export async function inspectRetrieval(
+  botId: string,
+  question: string,
+  limit: number = DEFAULT_LIMIT,
+): Promise<RetrievalCandidate[]> {
+  const trimmed = question.trim();
+  if (!trimmed) return [];
+
+  const [embedding] = await embedTexts([trimmed]);
+  const candidates = await chunkRepository.findRelevant(botId, embedding, {
+    limit: DEBUG_CANDIDATE_LIMIT,
+    minScore: 0,
+  });
+
+  const aboveFloor = candidates.filter((row) => row.score >= SCORE_FLOOR);
+  const withinMargin = selectByMargin(aboveFloor, RELATIVE_MARGIN);
+  const keptIds = new Set(withinMargin.slice(0, limit).map((row) => row.id));
+  const withinMarginIds = new Set(withinMargin.map((row) => row.id));
+
+  return candidates.map((row) => {
+    const chunk = toRetrievedChunk(row);
+    if (keptIds.has(row.id)) return { ...chunk, kept: true, rejectedBecause: null };
+    if (row.score < SCORE_FLOOR) return { ...chunk, kept: false, rejectedBecause: "below_floor" };
+    if (!withinMarginIds.has(row.id)) {
+      return { ...chunk, kept: false, rejectedBecause: "outside_margin" };
+    }
+    return { ...chunk, kept: false, rejectedBecause: "over_limit" };
+  });
 }
 
 type TurnMessage = { role: "user" | "assistant"; content: string };

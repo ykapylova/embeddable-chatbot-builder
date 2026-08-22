@@ -1,11 +1,10 @@
 import { creditCost } from "lib/plans";
 import { getOpenAIClient } from "server/services/openai-chat.service";
+import { isAbortError, withProviderRetry } from "server/services/provider-retry";
 
-import { buildSystemPrompt } from "./prompt";
+import { ANSWER_BUDGET } from "./budget";
+import { buildContextMessage, buildSystemPrompt, usedCitations } from "./prompt";
 import { citationsFromChunks, type AnswerEvent, type AnswerProvider, type AnswerRequest } from "./types";
-
-/** Answers are short by design; a long one is a sign the prompt went wrong. */
-const MAX_OUTPUT_TOKENS = 600;
 
 export const openAiAnswerProvider: AnswerProvider = {
   async *answer(request: AnswerRequest): AsyncIterable<AnswerEvent> {
@@ -16,7 +15,12 @@ export const openAiAnswerProvider: AnswerProvider = {
     if (request.chunks.length === 0) {
       yield { type: "start", citations: [] };
       yield { type: "delta", text: request.fallbackMessage };
-      yield { type: "done", answered: false, usage: { tokens: 0, credits: 0 } };
+      yield {
+        type: "done",
+        answered: false,
+        status: "no_context",
+        usage: { tokens: 0, inputTokens: 0, outputTokens: 0, credits: 0 },
+      };
       return;
     }
 
@@ -25,40 +29,75 @@ export const openAiAnswerProvider: AnswerProvider = {
     const client = getOpenAIClient();
 
     try {
-      const stream = await client.chat.completions.create({
-        model: request.model,
-        max_tokens: MAX_OUTPUT_TOKENS,
-        stream: true,
-        stream_options: { include_usage: true },
-        messages: [
-          { role: "system", content: buildSystemPrompt(request, citations) },
-          ...request.history.map((message) => ({
-            role: message.role,
-            content: message.content,
-          })),
-          { role: "user", content: request.question },
-        ],
-      });
+      // Only the call that opens the stream is retried. Once a delta has
+      // reached the visitor there is no safe way to start over — the answer
+      // they are reading would restart mid-sentence — so a failure after that
+      // point has to be a failure.
+      const stream = await withProviderRetry(
+        () =>
+          client.chat.completions.create(
+            {
+              model: request.model,
+              max_tokens: ANSWER_BUDGET.outputTokens,
+              stream: true,
+              stream_options: { include_usage: true },
+              messages: [
+                { role: "system", content: buildSystemPrompt(request) },
+                { role: "user", content: buildContextMessage(request.chunks, citations) },
+                ...request.history.map((message) => ({
+                  role: message.role,
+                  content: message.content,
+                })),
+                { role: "user", content: request.question },
+              ],
+            },
+            // Without this the completion keeps generating — and billing —
+            // after the visitor has closed the widget.
+            { signal: request.signal },
+          ),
+        "answer/openai",
+      );
 
       let tokens = 0;
+      let inputTokens = 0;
+      let outputTokens = 0;
+      let answerText = "";
 
       for await (const part of stream) {
         const delta = part.choices[0]?.delta?.content;
         if (delta) {
+          answerText += delta;
           yield { type: "delta", text: delta };
         }
         // The usage chunk arrives last and carries no choices.
         if (part.usage) {
           tokens = part.usage.total_tokens ?? 0;
+          inputTokens = part.usage.prompt_tokens ?? 0;
+          outputTokens = part.usage.completion_tokens ?? 0;
         }
       }
 
+      // "The model was called" is not the same as "the visitor got an answer".
+      // The retrieval rule deliberately passes weak, tangentially-related
+      // chunks so the model can be the final judge, and when it judges against
+      // them it says so in prose and cites nothing. Charging for that reads as
+      // a bug to the customer, so the citation — not the call — is what counts
+      // as an answer.
+      const grounded = usedCitations(answerText, citations).length > 0;
+
       yield {
         type: "done",
-        answered: true,
-        usage: { tokens, credits: creditCost(request.model) },
+        answered: grounded,
+        status: grounded ? "answered" : "abstained",
+        usage: {
+          tokens,
+          inputTokens,
+          outputTokens,
+          credits: grounded ? creditCost(request.model) : 0,
+        },
       };
     } catch (error) {
+      if (isAbortError(error)) return;
       console.error("[answer/openai]", error);
       yield {
         type: "error",

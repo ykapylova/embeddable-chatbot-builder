@@ -5,7 +5,7 @@ import type { RetrievalDebugResponse } from "lib/api-types/retrieval";
 import { requireAccount, unwrapAccount } from "server/auth/require-account";
 import { jsonErr, jsonOk } from "server/http/json-api";
 import { botRepository } from "server/repositories/bot.repository";
-import { findRelevantChunks } from "server/services/retrieval.service";
+import { inspectRetrieval, RELATIVE_MARGIN, SCORE_FLOOR } from "server/services/retrieval.service";
 
 export const runtime = "nodejs";
 
@@ -17,7 +17,10 @@ const debugSchema = z.object({
 
 /**
  * No answer is generated here — this exists so relevance can be judged by
- * eye before any model is involved (see `DEV_PLAN.md` §1).
+ * eye before any model is involved (see `DEV_PLAN.md` §1). Unlike the answer
+ * path it returns the rejected candidates too: "found it, scored it too low"
+ * and "there is nothing about this" are different problems with different
+ * fixes, and the owner cannot tell them apart from an empty list.
  */
 export async function POST(request: Request, context: RouteContext): Promise<NextResponse> {
   const result = await requireAccount();
@@ -36,8 +39,11 @@ export async function POST(request: Request, context: RouteContext): Promise<Nex
 
   try {
     const { question } = debugSchema.parse(body);
-    const chunks = await findRelevantChunks(botId, question);
-    return jsonOk<RetrievalDebugResponse>({ chunks });
+    const candidates = await inspectRetrieval(botId, question);
+    return jsonOk<RetrievalDebugResponse>({
+      candidates,
+      rule: { floor: SCORE_FLOOR, margin: RELATIVE_MARGIN },
+    });
   } catch (error) {
     if (error instanceof ZodError) {
       return jsonErr(error.issues[0]?.message ?? "Invalid payload", 422);

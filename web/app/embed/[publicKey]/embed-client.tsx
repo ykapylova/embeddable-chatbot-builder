@@ -165,7 +165,7 @@ export function EmbedClient({
   );
 
   const sendMessage: SendChatMessage = useCallback(
-    async ({ message, conversationId, signal }) => {
+    async ({ message, conversationId, requestId, signal }) => {
       const response = await fetch("/api/public/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -173,6 +173,7 @@ export function EmbedClient({
           publicKey,
           message,
           conversationId,
+          requestId,
           visitorId,
           pageUrl: hostParams.pageUrl ?? undefined,
         }),

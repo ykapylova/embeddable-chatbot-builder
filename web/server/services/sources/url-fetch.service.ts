@@ -42,23 +42,23 @@ function isPrivateOrReservedIp(ip: string): boolean {
  * original URL didn't. */
 async function assertPubliclyRoutable(url: URL): Promise<void> {
   if (url.protocol !== "http:" && url.protocol !== "https:") {
-    throw new SourceContentError("Only http and https URLs are supported.");
+    throw new SourceContentError("Only http and https URLs are supported.", "UNSUPPORTED_CONTENT");
   }
 
   const hostname = url.hostname.replace(/^\[|\]$/g, "");
   if (hostname === "localhost") {
-    throw new SourceContentError(BLOCKED_URL_MESSAGE);
+    throw new SourceContentError(BLOCKED_URL_MESSAGE, "UNSUPPORTED_CONTENT");
   }
 
   let address: string;
   try {
     address = isIP(hostname) ? hostname : (await lookup(hostname)).address;
   } catch {
-    throw new SourceContentError("Could not resolve this URL's address.");
+    throw new SourceContentError("Could not resolve this URL's address.", "UNKNOWN");
   }
 
   if (isPrivateOrReservedIp(address)) {
-    throw new SourceContentError(BLOCKED_URL_MESSAGE);
+    throw new SourceContentError(BLOCKED_URL_MESSAGE, "UNSUPPORTED_CONTENT");
   }
 }
 
@@ -85,9 +85,9 @@ export async function fetchUrlHtml(rawUrl: string): Promise<string> {
       });
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") {
-        throw new SourceContentError("This URL took too long to respond.");
+        throw new SourceContentError("This URL took too long to respond.", "TIMEOUT");
       }
-      throw new SourceContentError("Could not reach this URL.");
+      throw new SourceContentError("Could not reach this URL.", "UNKNOWN");
     } finally {
       clearTimeout(timeout);
     }
@@ -95,7 +95,7 @@ export async function fetchUrlHtml(rawUrl: string): Promise<string> {
     if (response.status >= 300 && response.status < 400) {
       const location = response.headers.get("location");
       if (!location) {
-        throw new SourceContentError("This URL redirected without a destination.");
+        throw new SourceContentError("This URL redirected without a destination.", "UNKNOWN");
       }
       currentUrl = new URL(location, currentUrl);
       response = undefined;
@@ -106,20 +106,20 @@ export async function fetchUrlHtml(rawUrl: string): Promise<string> {
   }
 
   if (!response) {
-    throw new SourceContentError("This URL redirected too many times.");
+    throw new SourceContentError("This URL redirected too many times.", "UNKNOWN");
   }
   if (!response.ok) {
-    throw new SourceContentError(`This URL returned an error (status ${response.status}).`);
+    throw new SourceContentError(`This URL returned an error (status ${response.status}).`, "UNKNOWN");
   }
 
   const contentType = response.headers.get("content-type") ?? "";
   if (!contentType.includes("html")) {
-    throw new SourceContentError("This URL did not return a readable HTML page.");
+    throw new SourceContentError("This URL did not return a readable HTML page.", "UNSUPPORTED_CONTENT");
   }
 
   const buffer = await response.arrayBuffer();
   if (buffer.byteLength > SOURCE_URL_FETCH_MAX_BYTES) {
-    throw new SourceContentError("This page is too large to index.");
+    throw new SourceContentError("This page is too large to index.", "LIMIT_CHARS");
   }
 
   return Buffer.from(buffer).toString("utf-8");

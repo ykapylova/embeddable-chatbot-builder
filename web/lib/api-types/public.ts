@@ -12,6 +12,8 @@ export type PublicChatTurnRequest = {
   visitorId: string;
   /** The page the visitor was on when they asked — stored for the owner's transcript view. */
   pageUrl?: string;
+  /** Idempotency key for this turn; unchanged when the visitor retries it. */
+  requestId?: string;
 };
 
 export type PublicFeedbackRequest = {
@@ -34,4 +36,6 @@ export type PublicWidgetErrorCode =
   | "BOT_UNAVAILABLE"
   | "DOMAIN_NOT_ALLOWED"
   | "RATE_LIMITED"
-  | "CONVERSATION_LIMIT";
+  | "CONVERSATION_LIMIT"
+  | "LEAD_CAPTURE_DISABLED"
+  | "BOT_BUSY";
