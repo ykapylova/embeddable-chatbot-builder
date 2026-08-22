@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Widget harness</title>
+    <style>
+      :root { color-scheme: light; font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
+      body { margin: 0; background: #f7f2e7; color: #1c1b1a; }
+      main { max-width: 44rem; margin: 0 auto; padding: 2.5rem 1.25rem 8rem; }
+      h1 { font-size: 1.5rem; margin: 0 0 0.5rem; }
+      p { color: #6f6a62; line-height: 1.6; }
+      code { background: #ece4d3; padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }
+      form { display: flex; gap: 0.5rem; margin: 1.5rem 0; flex-wrap: wrap; }
+      input { flex: 1 1 18rem; padding: 0.6rem 0.75rem; border: 1px solid #ece4d3; border-radius: 8px; font: inherit; }
+      button { padding: 0.6rem 1rem; border: 1px solid #1c1b1a; background: #1c1b1a; color: #f7f2e7; border-radius: 8px; font: inherit; cursor: pointer; }
+      button.secondary { background: transparent; color: #1c1b1a; }
+      ol { line-height: 1.9; }
+      .filler { height: 160vh; border-top: 1px dashed #d9d1bf; margin-top: 2rem; padding-top: 1rem; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Widget harness</h1>
+      <p>
+        A plain host page for checking the embedded widget by hand. The widget only ever runs
+        inside someone else's page, so this is the smallest thing that reproduces that: no React,
+        no app styles, no framework — just the <code>&lt;script&gt;</code> tag a customer pastes.
+      </p>
+      <p>
+        Paste a bot's public key (<code>pk_…</code>, from the bot's Install page) and load it. The
+        key is remembered in <code>localStorage</code> so a reload keeps it. The bot must allow
+        <code>localhost</code> under its widget domains.
+      </p>
+
+      <form id="load">
+        <input id="key" name="key" placeholder="pk_…" autocomplete="off" spellcheck="false" />
+        <button type="submit">Load widget</button>
+        <button type="button" class="secondary" id="reset">Clear</button>
+      </form>
+
+      <h2>What to check</h2>
+      <ol>
+        <li>Desktop width: the panel opens bottom-right, 380px wide, and never covers the page.</li>
+        <li>Narrow the window below 480px: the panel goes fullscreen — once, without flickering.</li>
+        <li>Widen it again: it returns to the panel, once.</li>
+        <li>Scroll this page with the panel open: the panel stays put.</li>
+        <li>Console: <code>window.ChatWidget.open()</code>, <code>.close()</code>, <code>.ask("hi")</code>.</li>
+      </ol>
+
+      <div class="filler">Scroll area — the widget must stay pinned to the viewport.</div>
+    </main>
+
+    <script>
+      (function () {
+        var STORAGE_KEY = "docsy_harness_key";
+        var input = document.getElementById("key");
+        input.value = localStorage.getItem(STORAGE_KEY) || "";
+
+        function mount(key) {
+          var script = document.createElement("script");
+          script.src = "/widget.js";
+          script.async = true;
+          script.setAttribute("data-bot-key", key);
+          document.body.appendChild(script);
+        }
+
+        document.getElementById("load").addEventListener("submit", function (event) {
+          event.preventDefault();
+          var key = input.value.trim();
+          if (!key) return;
+          localStorage.setItem(STORAGE_KEY, key);
+          // The widget reads its own <script> tag once, on load, so switching
+          // keys means a fresh page rather than a second mount.
+          window.location.reload();
+        });
+
+        document.getElementById("reset").addEventListener("click", function () {
+          localStorage.removeItem(STORAGE_KEY);
+          window.location.reload();
+        });
+
+        if (input.value) mount(input.value);
+      })();
+    </script>
+  </body>
+</html>

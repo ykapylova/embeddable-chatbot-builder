@@ -96,8 +96,8 @@ export function BotPlayground({ botId }: { botId: string }) {
             greeting={bot.data.welcomeMessage}
             initialSession={session ?? undefined}
             onSessionChange={persistSession}
-            sendMessage={({ message, conversationId, signal }) =>
-              postChatTurn(botId, { message, conversationId }, signal)
+            sendMessage={({ message, conversationId, requestId, signal }) =>
+              postChatTurn(botId, { message, conversationId, requestId }, signal)
             }
           />
         </div>

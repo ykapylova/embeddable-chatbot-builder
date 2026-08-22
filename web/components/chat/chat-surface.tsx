@@ -72,6 +72,9 @@ export function ChatSurface({
         const response = await sendMessage({
           message: question,
           conversationId: conversationIdRef.current,
+          // The assistant message's id doubles as the turn's idempotency key:
+          // `handleRetry` reuses it, `handleSend` mints a new one.
+          requestId: assistantId,
           signal: controller.signal,
         });
 

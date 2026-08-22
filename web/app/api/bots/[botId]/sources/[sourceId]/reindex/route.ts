@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { requireAccount, unwrapAccount } from "server/auth/require-account";
 import { jsonErr, jsonOk } from "server/http/json-api";
-import { sourceService } from "server/services/sources/source.service";
+import { SourceBusyError, sourceService } from "server/services/sources/source.service";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -16,12 +16,17 @@ export async function POST(_request: Request, context: RouteContext): Promise<Ne
   if (unwrapAccount(result)) return result;
 
   const { botId, sourceId } = await context.params;
-  const source = await sourceService.reindex(
-    botId,
-    result.account.id,
-    result.account.plan,
-    sourceId,
-  );
+
+  let source;
+  try {
+    source = await sourceService.reindex(botId, result.account.id, result.account.plan, sourceId);
+  } catch (error) {
+    // A second Retry while the first is still running is the user being
+    // impatient, not an error in their input — say so rather than starting a
+    // duplicate run.
+    if (error instanceof SourceBusyError) return jsonErr(error.message, 409);
+    throw error;
+  }
   if (!source) return jsonErr("Source not found", 404);
 
   return jsonOk(source);

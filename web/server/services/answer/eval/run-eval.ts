@@ -175,7 +175,8 @@ async function main(): Promise<void> {
       ["README", readme],
     ] as const) {
       const row = await sourceRepository.create({ botId: bot.id, type: "text", title });
-      const done = await ingestSource(row, text, account.plan);
+      const claimed = (await sourceRepository.beginIndexing(row.id, bot.id)) ?? row;
+      const done = await ingestSource(claimed, text, account.plan, claimed.indexVersion);
       console.log(`ingested ${title}: ${done.status}, ${done.chunkCount} chunks`);
     }
 

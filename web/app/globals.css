@@ -20,11 +20,22 @@
   --chrome-foreground: #f7f2e7;
   --chrome-soft: #2a2927;
 
-  /* Brand gradient (hero glow, primary CTAs) — rose to amber, same family as the tones below. */
+  /* Brand gradient — rose to amber, same family as the tones below.
+     Decoration only: white text over the amber end measures about 1.5:1, so
+     it is safe behind a glow or an icon and never behind a label. */
   --brand-1: #e85c7b;
   --brand-2: #f2c438;
   --brand-soft: #fbe9d6;
   --brand-ring: rgba(232, 92, 123, 0.28);
+
+  /* The text-safe half of the brand. Every surface that carries white copy
+     uses these instead of the gradient: --brand-cta clears 4.5:1 against
+     white, --brand-cta-deep is the darker stop the large panels fade to, and
+     --brand-ink is the warm end of gradient *text* on the cream background,
+     where the requirement runs the other way. */
+  --brand-cta: #c9455f;
+  --brand-cta-deep: #a83550;
+  --brand-ink: #b8632a;
 
   /* Solid category tones — stat cards, hero panels. */
   --tone-amber-bg: #f2c438;
@@ -217,14 +228,21 @@ body {
 }
 
 .brand-text {
-  background: linear-gradient(100deg, var(--brand-1), var(--brand-2));
+  background: linear-gradient(100deg, var(--brand-1), var(--brand-ink));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
+/* Decorative fills only — nothing legible sits on top of these. */
 .brand-gradient {
   background: linear-gradient(100deg, var(--brand-1), var(--brand-2));
+}
+
+/* The text-bearing counterpart: a flat rose that white copy can actually be read on. */
+.brand-cta-surface {
+  background: var(--brand-cta);
+  color: #ffffff;
 }
 
 .glow-ring {

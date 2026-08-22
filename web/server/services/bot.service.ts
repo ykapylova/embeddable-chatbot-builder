@@ -13,6 +13,7 @@ import {
 import type { PlanId } from "lib/plans";
 import { botRepository, type BotRow } from "server/repositories/bot.repository";
 import { sourceRepository } from "server/repositories/source.repository";
+import { invalidateAnswerCache } from "server/services/answer/cache";
 import { assertPlan } from "server/services/plan.service";
 import { discardSourceBlobs } from "server/services/sources/storage-cleanup.service";
 
@@ -83,6 +84,9 @@ export const updateBotSchema = z
     brandingEnabled: z.boolean().optional(),
   })
   .refine((patch) => Object.keys(patch).length > 0, { message: "Nothing to update" });
+
+/** Editing any of these changes what an answer would say, so cached answers must go. */
+const ANSWER_AFFECTING_FIELDS = ["systemPrompt", "tone", "fallbackMessage"] as const;
 
 /**
  * Widget public key. Not a secret — it sits in a <script> tag on the customer's
@@ -178,7 +182,18 @@ export const botService = {
       ...patch,
       systemPrompt: patch.systemPrompt === "" ? null : patch.systemPrompt,
     });
-    return row ? toBot(row) : null;
+    if (!row) return null;
+
+    // The cache is keyed by question, not by the instruction that produced the
+    // answer, so an edit to how the bot speaks would otherwise be invisible for
+    // every question it has already been asked — and the owner is looking
+    // straight at the playground when they make it, so it reads as "my change
+    // did nothing".
+    if (ANSWER_AFFECTING_FIELDS.some((field) => field in patch)) {
+      await invalidateAnswerCache(botId);
+    }
+
+    return toBot(row);
   },
 
   /**

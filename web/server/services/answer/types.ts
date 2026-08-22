@@ -28,6 +28,13 @@ export type AnswerHistoryMessage = {
   content: string;
 };
 
+/**
+ * How the turn ended, as far as the answer layer can tell. The route widens
+ * this with the outcomes only it knows about — a quota refusal, an abandoned
+ * stream — before writing it to `messages.answer_status`.
+ */
+export type AnswerStatus = "answered" | "abstained" | "no_context";
+
 export type AnswerRequest = {
   question: string;
   history: AnswerHistoryMessage[];
@@ -38,17 +45,25 @@ export type AnswerRequest = {
   tone: string;
   /** Used verbatim when nothing relevant was retrieved. */
   fallbackMessage: string;
+  /**
+   * The caller's request signal. Forwarded to the provider so a visitor who
+   * closes the widget also stops the completion we are paying for.
+   */
+  signal?: AbortSignal;
 };
 
 export type AnswerUsage = {
   tokens: number;
+  /** Split out so a per-answer cost can be computed; `tokens` stays the total. */
+  inputTokens: number;
+  outputTokens: number;
   credits: number;
 };
 
 export type AnswerEvent =
   | { type: "start"; citations: Citation[] }
   | { type: "delta"; text: string }
-  | { type: "done"; answered: boolean; usage: AnswerUsage }
+  | { type: "done"; answered: boolean; status: AnswerStatus; usage: AnswerUsage }
   | { type: "error"; code: string; message: string };
 
 export interface AnswerProvider {

@@ -14,5 +14,21 @@ export type RetrievedChunk = {
   score: number;
 };
 
+/**
+ * Why the answer path would not have used this chunk. `null` means it would
+ * have — the panel is useless if a rejected hit and an empty knowledge base
+ * look the same, which is exactly what it used to show.
+ */
+export type RetrievalRejection = "below_floor" | "outside_margin" | "over_limit";
+
+export type RetrievalCandidate = RetrievedChunk & {
+  kept: boolean;
+  rejectedBecause: RetrievalRejection | null;
+};
+
 export type RetrievalDebugBody = { question: string };
-export type RetrievalDebugResponse = { chunks: RetrievedChunk[] };
+export type RetrievalDebugResponse = {
+  candidates: RetrievalCandidate[];
+  /** The rule in force, so the panel can explain a rejection in the numbers it actually used. */
+  rule: { floor: number; margin: number };
+};

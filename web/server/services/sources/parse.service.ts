@@ -17,6 +17,7 @@ async function extractTextFromPdf(bytes: Buffer): Promise<string> {
     console.error("[extractTextFromPdf]", error);
     throw new SourceContentError(
       "This PDF could not be opened — it may be corrupted or password-protected.",
+      "UNSUPPORTED_CONTENT",
     );
   } finally {
     await parser.destroy();
@@ -34,14 +35,14 @@ export async function extractTextForFile(
   if (extension === "pdf") {
     const text = await extractTextFromPdf(bytes);
     if (!text.trim()) {
-      throw new SourceContentError("This PDF has no extractable text — it may be a scan.");
+      throw new SourceContentError("This PDF has no extractable text — it may be a scan.", "EMPTY_SOURCE");
     }
     return text;
   }
 
   const text = extractPlainText(bytes);
   if (!text.trim()) {
-    throw new SourceContentError("This file is empty.");
+    throw new SourceContentError("This file is empty.", "EMPTY_SOURCE");
   }
   return text;
 }
@@ -53,7 +54,7 @@ export function extractTextFromHtml(html: string): string {
   $("nav, script, style, footer").remove();
   const text = $("body").length > 0 ? $("body").text() : $.root().text();
   if (!text.trim()) {
-    throw new SourceContentError("This page has no readable text content.");
+    throw new SourceContentError("This page has no readable text content.", "EMPTY_SOURCE");
   }
   return text;
 }

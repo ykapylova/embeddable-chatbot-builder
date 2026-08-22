@@ -6,7 +6,10 @@ import { MessageCircle, Sparkles, X } from "lucide-react";
 
 import { cn } from "lib/utils";
 
+/* Decoration keeps the gradient; anything with a label on it does not — see
+   the note on --brand-2 in globals.css. */
 const BRAND_GRADIENT = "linear-gradient(100deg, var(--brand-1), var(--brand-2))";
+const CTA_BACKGROUND = "var(--brand-cta)";
 
 /**
  * The public key of the bot this landing page demos, trained on the product's
@@ -102,7 +105,7 @@ function ChatPanel({ onClose }: { onClose: () => void }) {
         <div className="flex items-center gap-2">
           <span
             className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium text-white"
-            style={{ background: BRAND_GRADIENT }}
+            style={{ background: CTA_BACKGROUND }}
           >
             <Sparkles className="h-3 w-3" />
             Live

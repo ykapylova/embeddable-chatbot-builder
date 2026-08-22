@@ -115,7 +115,7 @@ export function PricingSection({
                     variant={plan.recommended ? "default" : "outline"}
                     style={
                       plan.recommended
-                        ? { background: "linear-gradient(100deg, var(--brand-1), var(--brand-2))" }
+                        ? { background: "var(--brand-cta)" }
                         : undefined
                     }
                   >

@@ -44,8 +44,8 @@ export function AppearancePreview({
             variant="widget"
             theme={theme}
             greeting={greeting}
-            sendMessage={({ message, conversationId, signal }) =>
-              postChatTurn(botId, { message, conversationId }, signal)
+            sendMessage={({ message, conversationId, requestId, signal }) =>
+              postChatTurn(botId, { message, conversationId, requestId }, signal)
             }
           />
         </div>

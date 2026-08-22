@@ -5,9 +5,12 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { FileText, Globe, HelpCircle, RotateCcw, Trash2, Type } from "lucide-react";
 
+import Link from "next/link";
+
 import { deleteSource, reindexSource } from "lib/api-client";
+import { appPaths } from "lib/api-paths";
 import { queryKeys } from "lib/query-keys";
-import type { Source, SourceType } from "lib/api-types/source";
+import { isRetryableSourceError, type Source, type SourceType } from "lib/api-types/source";
 import { Button } from "components/ui/button";
 import { SourceStatusBadge } from "components/knowledge/source-status-badge";
 
@@ -77,7 +80,23 @@ function SourceRow({ botId, source }: { botId: string; source: Source }) {
               <span>{formatIndexedAt(source)}</span>
             </div>
             {source.status === "failed" && source.error ? (
-              <p className="mt-1.5 text-xs text-[var(--danger)]">{source.error}</p>
+              <p className="mt-1.5 text-xs text-[var(--danger)]">
+                {source.error}
+                {/* Every other plan limit in the app offers a way out of itself;
+                    a limit that arrives as a stored row should not be the one
+                    dead end. */}
+                {source.errorCode === "LIMIT_CHARS" ? (
+                  <>
+                    {" "}
+                    <Link
+                      href={`${appPaths.billing()}?reason=LIMIT_CHARS`}
+                      className="underline underline-offset-2"
+                    >
+                      Upgrade plan
+                    </Link>
+                  </>
+                ) : null}
+              </p>
             ) : null}
             {retry.isError ? (
               <p className="mt-1.5 text-xs text-[var(--danger)]">
@@ -88,7 +107,9 @@ function SourceRow({ botId, source }: { botId: string; source: Source }) {
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5">
-          {source.status === "failed" ? (
+          {/* Retry is worth offering after a timeout and useless after a scan
+              with no text — the code is what tells them apart. */}
+          {source.status === "failed" && isRetryableSourceError(source.errorCode) ? (
             <Button
               variant="outline"
               size="sm"

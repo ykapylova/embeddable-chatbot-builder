@@ -34,7 +34,7 @@ export async function SiteHeader() {
               <Button
                 size="sm"
                 className="border-0"
-                style={{ background: "linear-gradient(100deg, var(--brand-1), var(--brand-2))" }}
+                style={{ background: "var(--brand-cta)" }}
               >
                 Go to dashboard
               </Button>
@@ -51,7 +51,7 @@ export async function SiteHeader() {
                 <Button
                   size="sm"
                   className="border-0"
-                  style={{ background: "linear-gradient(100deg, var(--brand-1), var(--brand-2))" }}
+                  style={{ background: "var(--brand-cta)" }}
                 >
                   Build your bot free
                 </Button>

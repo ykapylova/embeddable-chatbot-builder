@@ -3,9 +3,10 @@ import { count, eq } from "drizzle-orm";
 import { getDb } from "server/db/client";
 import { accountsTable, messagesTable } from "server/db/schema";
 import type { PlanId } from "lib/plans";
+import { ANSWER_BUDGET } from "server/services/answer/budget";
 
-/** Mirrors the owner-facing chat endpoint's cap — see `app/api/bots/[botId]/chat/route.ts`. */
-export const WIDGET_MESSAGE_MAX_LENGTH = 4000;
+/** The same question cap both chat endpoints enforce — one number, one place. */
+export const WIDGET_MESSAGE_MAX_LENGTH = ANSWER_BUDGET.questionChars;
 
 /**
  * A cutoff after which a conversation must start over. Protects a single

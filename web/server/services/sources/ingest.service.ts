@@ -5,7 +5,7 @@ import { assertPlan, PlanLimitError } from "server/services/plan.service";
 
 import { chunkText } from "./chunk.service";
 import { embedTexts } from "./embed.service";
-import { SourceContentError } from "./errors";
+import { SourceContentError, type SourceErrorCode } from "./errors";
 import { normalizeExtractedText } from "./normalize.service";
 
 function emptyContentMessage(type: SourceRow["type"]): string {
@@ -19,9 +19,15 @@ function emptyContentMessage(type: SourceRow["type"]): string {
   }
 }
 
+type OwnerFacingFailure = { message: string; code: SourceErrorCode };
+
 /** Failures the owner caused and can act on, as opposed to something breaking. */
-function ownerFacingMessage(error: unknown): string | null {
-  if (error instanceof SourceContentError || error instanceof PlanLimitError) return error.message;
+function ownerFacingFailure(error: unknown): OwnerFacingFailure | null {
+  if (error instanceof SourceContentError) return { message: error.message, code: error.code };
+  if (error instanceof PlanLimitError) {
+    // The only plan limit reachable from inside indexing is the character cap.
+    return { message: error.message, code: "LIMIT_CHARS" };
+  }
   return null;
 }
 
@@ -38,18 +44,23 @@ function ownerFacingMessage(error: unknown): string | null {
  * 2MB text file do not carry the same amount of text. Placing it before
  * `chunkText` also means an over-limit source is never embedded, which is what
  * the cap is protecting.
+ *
+ * `indexVersion` is the version this run claimed when it started. It is carried
+ * into the commit so a slow run whose source has since been reindexed discards
+ * its own results instead of overwriting the fresher ones.
  */
 export async function ingestSource(
   source: SourceRow,
   rawText: string,
   plan: PlanId,
+  indexVersion: number,
 ): Promise<SourceRow> {
   const { id: sourceId, botId } = source;
 
   try {
     const normalized = normalizeExtractedText(rawText);
     if (!normalized) {
-      throw new SourceContentError(emptyContentMessage(source.type));
+      throw new SourceContentError(emptyContentMessage(source.type), "EMPTY_SOURCE");
     }
 
     await assertPlan({
@@ -62,10 +73,19 @@ export async function ingestSource(
 
     const chunks = chunkText(normalized);
     if (chunks.length === 0) {
-      throw new SourceContentError(emptyContentMessage(source.type));
+      throw new SourceContentError(emptyContentMessage(source.type), "EMPTY_SOURCE");
     }
 
-    const embeddings = await embedTexts(chunks.map((chunk) => chunk.content));
+    let embeddings: number[][];
+    try {
+      embeddings = await embedTexts(chunks.map((chunk) => chunk.content));
+    } catch (error) {
+      console.error("[ingestSource] embedding failed", sourceId, error);
+      throw new SourceContentError(
+        "Could not build the search index for this source. Try reindexing.",
+        "EMBEDDING_FAILED",
+      );
+    }
 
     const updated = await sourceRepository.replaceChunksAndMarkReady(
       sourceId,
@@ -74,12 +94,16 @@ export async function ingestSource(
         content: chunk.content,
         tokenCount: chunk.tokenCount,
         embedding: embeddings[index],
+        metadata: { heading: chunk.heading, url: source.sourceUrl },
       })),
-      { charCount: normalized.length, chunkCount: chunks.length },
+      { charCount: normalized.length, chunkCount: chunks.length, indexVersion },
     );
 
     if (!updated) {
-      throw new Error("Source was removed while it was being indexed");
+      // Either the source was deleted while it was being indexed, or a newer
+      // run has claimed the version — in both cases this run's chunks are the
+      // wrong ones and were rolled back with the transaction.
+      return (await sourceRepository.findOwned(sourceId, botId)) ?? source;
     }
 
     // The bot's knowledge just changed, so any answer cached against the old
@@ -87,15 +111,22 @@ export async function ingestSource(
     await invalidateAnswerCache(botId);
     return updated;
   } catch (error) {
-    const expected = ownerFacingMessage(error);
-    const message = expected ?? "Something went wrong while indexing this source. Try reindexing.";
+    const expected = ownerFacingFailure(error);
+    const failure: OwnerFacingFailure = expected ?? {
+      message: "Something went wrong while indexing this source. Try reindexing.",
+      code: "UNKNOWN",
+    };
 
     if (!expected) {
       // Never log source content — only the id and the failure itself.
       console.error("[ingestSource]", sourceId, error);
     }
 
-    const failed = await sourceRepository.update(sourceId, botId, { status: "failed", error: message });
-    return failed ?? { ...source, status: "failed", error: message };
+    const failed = await sourceRepository.update(sourceId, botId, {
+      status: "failed",
+      error: failure.message,
+      errorCode: failure.code,
+    });
+    return failed ?? { ...source, status: "failed", error: failure.message, errorCode: failure.code };
   }
 }

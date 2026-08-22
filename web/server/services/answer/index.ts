@@ -4,7 +4,8 @@ import { openAiAnswerProvider } from "./openai-answer.provider";
 import { stubAnswerProvider } from "./stub-answer.provider";
 import type { AnswerProvider } from "./types";
 
-export { usedCitations } from "./prompt";
+export { escapeSourceTags, usedCitations } from "./prompt";
+export { ANSWER_BUDGET } from "./budget";
 
 /**
  * The only place `ANSWER_PROVIDER` is read. Everything downstream depends on
@@ -16,6 +17,7 @@ export function getAnswerProvider(): AnswerProvider {
 
 export type {
   AnswerEvent,
+  AnswerStatus,
   AnswerHistoryMessage,
   AnswerProvider,
   AnswerRequest,

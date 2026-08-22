@@ -1,13 +1,14 @@
+import { randomUUID } from "node:crypto";
+
 import { z, ZodError } from "zod";
 
-import type { ChatCitation, ChatStreamEvent } from "lib/api-types/chat";
 import { planLimits } from "lib/plans";
+import { logRefusal } from "server/observability/log";
 import { botRepository } from "server/repositories/bot.repository";
 import { conversationRepository } from "server/repositories/conversation.repository";
 import { jsonErr } from "server/http/json-api";
-import { getAnswerProvider, usedCitations, type AnswerHistoryMessage, type RetrievedChunk } from "server/services/answer";
-import { lookupCachedAnswer, storeCachedAnswer } from "server/services/answer/cache";
-import { CREDIT_LIMIT_MESSAGE, chargeForAnswer, refundForAnswer } from "server/services/plan.service";
+import { ANSWER_BUDGET, type AnswerHistoryMessage } from "server/services/answer";
+import { replayStoredTurn, streamChatTurn } from "server/services/chat/turn.service";
 import { corsHeaders, corsPreflight, withCors } from "server/services/widget/cors";
 import {
   countConversationMessages,
@@ -16,14 +17,15 @@ import {
   WIDGET_MESSAGE_MAX_LENGTH,
 } from "server/services/widget/limits";
 import { isHostAllowed, resolveRequestHost } from "server/services/widget/origin";
-import { checkRateLimit } from "server/services/widget/rate-limit";
+import {
+  checkRateLimit,
+  releaseGeneration,
+  releaseGenerationSlot,
+  reserveGeneration,
+} from "server/services/widget/rate-limit";
 import { resolveRequestIp } from "server/services/widget/request-ip";
-import { findRelevantChunksForTurn } from "server/services/retrieval.service";
 
 export const runtime = "nodejs";
-
-/** Same window as the owner-facing endpoint — see PROJECT_SPEC.md §8. */
-const HISTORY_LIMIT = 4;
 
 const chatTurnSchema = z.object({
   publicKey: z.string().trim().min(1, "publicKey is required"),
@@ -31,21 +33,12 @@ const chatTurnSchema = z.object({
   message: z.string().trim().min(1, "Message is required").max(WIDGET_MESSAGE_MAX_LENGTH),
   visitorId: z.string().trim().min(1, "visitorId is required").max(128),
   pageUrl: z.string().trim().max(2048).optional(),
+  /** See the owner-facing endpoint: stable across the widget's own Retry. */
+  requestId: z.string().uuid().optional(),
 });
-
-const encoder = new TextEncoder();
 
 function err(request: Request, message: string, status: number, code?: string): Response {
   return withCors(request, jsonErr(message, status, code ? { code } : undefined));
-}
-
-function toChatCitations(citations: { index: number; sourceId: string; sourceTitle: string; sourceUrl: string | null }[]): ChatCitation[] {
-  return citations.map((c) => ({
-    index: c.index,
-    sourceId: c.sourceId,
-    sourceTitle: c.sourceTitle,
-    sourceUrl: c.sourceUrl,
-  }));
 }
 
 export function OPTIONS(request: Request): Response {
@@ -78,6 +71,7 @@ export async function POST(request: Request): Promise<Response> {
 
   const host = resolveRequestHost(request);
   if (!isHostAllowed(host, bot.allowedDomains)) {
+    logRefusal("widget.blocked", { code: "DOMAIN_NOT_ALLOWED", botId: bot.id, route: "chat", host });
     return err(
       request,
       "This site is not authorized to use this chat widget.",
@@ -87,7 +81,14 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const ip = resolveRequestIp(request);
-  if (!checkRateLimit({ visitorId: payload.visitorId, ip, botId: bot.id })) {
+  const limit = await checkRateLimit("chat", { visitorId: payload.visitorId, ip, botId: bot.id });
+  if (!limit.allowed) {
+    logRefusal("widget.blocked", {
+      code: "RATE_LIMITED",
+      botId: bot.id,
+      route: "chat",
+      dimension: limit.dimension,
+    });
     return err(request, "Too many messages — please wait a moment and try again.", 429, "RATE_LIMITED");
   }
 
@@ -107,8 +108,24 @@ export async function POST(request: Request): Promise<Response> {
     return err(request, "Conversation not found", 404);
   }
 
+  const streamHeaders = {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache, no-transform",
+    Connection: "keep-alive",
+    ...corsHeaders(request),
+  };
+
+  // Same turn, already generated: replay it rather than pay for it twice.
+  if (payload.requestId) {
+    const stored = await conversationRepository.findTurnByRequestId(conversation.id, payload.requestId);
+    if (stored) {
+      return new Response(replayStoredTurn(conversation.id, stored), { headers: streamHeaders });
+    }
+  }
+
   const messageCount = await countConversationMessages(conversation.id);
   if (messageCount >= WIDGET_MAX_MESSAGES_PER_CONVERSATION) {
+    logRefusal("widget.blocked", { code: "CONVERSATION_LIMIT", botId: bot.id, route: "chat" });
     return err(
       request,
       "This conversation has reached its message limit. Please start a new one.",
@@ -117,171 +134,54 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
-  const historyRows = await conversationRepository.recentMessages(conversation.id, HISTORY_LIMIT);
-  const history: AnswerHistoryMessage[] = historyRows.map((row) => ({
-    role: row.role,
-    content: row.content,
-  }));
+  // One bot must not be able to hold open an unbounded number of streams —
+  // each one is an OpenAI completion we are paying for.
+  const slot = await reserveGeneration(bot.id);
+  if (!slot) {
+    logRefusal("widget.blocked", { code: "BOT_BUSY", botId: bot.id, route: "chat" });
+    return err(
+      request,
+      "This assistant is handling too many chats right now. Please try again in a moment.",
+      429,
+      "BOT_BUSY",
+    );
+  }
 
-  // The quota check happens inside the stream below, before the model is
-  // ever called, so a stream never dies mid-answer.
-  const plan = (await getAccountPlan(bot.accountId)) ?? "free";
-  const model = planLimits(plan).models[0];
-  const provider = getAnswerProvider();
+  // Anything that throws between the reservation and the stream would otherwise
+  // hold the slot until its TTL, so it is given back on the way out.
+  try {
+    const historyRows = await conversationRepository.recentMessages(
+      conversation.id,
+      ANSWER_BUDGET.historyMessages,
+    );
+    const history: AnswerHistoryMessage[] = historyRows.map((row) => ({
+      role: row.role,
+      content: row.content,
+    }));
 
-  const stream = new ReadableStream<Uint8Array>({
-    async start(controller) {
-      const startedAt = Date.now();
-      let assistantText = "";
-      let citations: ChatCitation[] = [];
-      let keptCitations: ChatCitation[] | null = null;
-      let answered = false;
-      let usage = { tokens: 0, credits: 0 };
-      let errored = false;
-      let closed = false;
-      let charged = false;
+    // The quota check happens inside the stream, before the model is ever
+    // called, so a stream never dies mid-answer.
+    const plan = (await getAccountPlan(bot.accountId)) ?? "free";
 
-      const send = (event: ChatStreamEvent) => {
-        if (closed) return;
-        try {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
-        } catch {
-          closed = true;
-        }
-      };
+    const stream = streamChatTurn({
+      channel: "widget",
+      requestId: payload.requestId ?? randomUUID(),
+      accountId: bot.accountId,
+      plan,
+      model: planLimits(plan).models[0],
+      botId: bot.id,
+      botInstruction: bot.systemPrompt,
+      tone: bot.tone,
+      fallbackMessage: bot.fallbackMessage,
+      conversationId: conversation.id,
+      question: payload.message,
+      history,
+      signal: request.signal,
+    });
 
-      const onAbort = () => {
-        closed = true;
-      };
-      request.signal.addEventListener("abort", onAbort);
-
-      try {
-        // A repeated standalone question is served from the cache — no
-        // retrieval, no model call. Support widgets ask the same handful of
-        // questions constantly, so this is where the cache earns its keep.
-        const cached = await lookupCachedAnswer(bot.id, payload.message, history);
-        if (cached) {
-          keptCitations = cached.citations;
-          send({ type: "start", conversationId: conversation.id, citations: cached.citations });
-          assistantText = cached.answer;
-          send({ type: "delta", text: cached.answer });
-          answered = true;
-          usage = { tokens: 0, credits: 0 };
-          send({ type: "done", answered: true, usage, citations: cached.citations });
-          return;
-        }
-
-        const chunks: RetrievedChunk[] = await findRelevantChunksForTurn(bot.id, payload.message, history);
-
-        // An empty retrieval result is always a free, canned fallback — see
-        // the answer provider. Only a real model call needs a credit, so the
-        // atomic charge happens here, before the model is ever invoked.
-        const willCost = chunks.length > 0;
-        if (willCost) {
-          charged = await chargeForAnswer(bot.accountId, plan, model);
-        }
-
-        if (willCost && !charged) {
-          // Free: this *is* the placeholder. Pro/Business: the 10% grace
-          // buffer (applied inside chargeForAnswer) has also run out — same
-          // contact-collection behaviour either way. The widget must never go
-          // silent (PROJECT_SPEC.md §10.4).
-          send({ type: "start", conversationId: conversation.id, citations: [] });
-          assistantText = CREDIT_LIMIT_MESSAGE;
-          send({ type: "delta", text: assistantText });
-          usage = { tokens: 0, credits: 0 };
-          keptCitations = [];
-          send({ type: "done", answered: false, usage, citations: [] });
-        } else {
-          for await (const event of provider.answer({
-            question: payload.message,
-            history,
-            chunks,
-            model,
-            botInstruction: bot.systemPrompt,
-            tone: bot.tone,
-            fallbackMessage: bot.fallbackMessage,
-          })) {
-            if (request.signal.aborted) break;
-
-            if (event.type === "start") {
-              citations = toChatCitations(event.citations);
-              send({ type: "start", conversationId: conversation.id, citations });
-            } else if (event.type === "delta") {
-              assistantText += event.text;
-              send(event);
-            } else if (event.type === "done") {
-              answered = event.answered;
-              usage = event.usage;
-              keptCitations = usedCitations(assistantText, citations);
-              send({ ...event, citations: keptCitations });
-            } else {
-              errored = true;
-              send(event);
-            }
-
-            if (request.signal.aborted) break;
-          }
-
-          // Cache only a grounded, completed answer, so the next visitor asking
-          // the same question skips retrieval and the model entirely.
-          if (answered && keptCitations && keptCitations.length > 0) {
-            await storeCachedAnswer(bot.id, payload.message, history, assistantText, keptCitations);
-          }
-        }
-      } catch (error) {
-        console.error("[POST /api/public/chat]", error);
-        errored = true;
-        send({
-          type: "error",
-          code: "INTERNAL",
-          message: "The assistant could not finish this answer. Please try again.",
-        });
-      } finally {
-        request.signal.removeEventListener("abort", onAbort);
-
-        // A charge that never turned into a delivered answer costs the
-        // customer nothing.
-        if (charged && !answered) {
-          await refundForAnswer(bot.accountId, model);
-        }
-
-        // Same pairing rule as the owner endpoint: both messages are written
-        // together, at the end, and only if something was actually said.
-        if (assistantText || answered || errored) {
-          await conversationRepository.appendMessage({
-            conversationId: conversation.id,
-            role: "user",
-            content: payload.message,
-          });
-
-          await conversationRepository.appendMessage({
-            conversationId: conversation.id,
-            role: "assistant",
-            content: assistantText,
-            citations: keptCitations ?? usedCitations(assistantText, citations),
-            model,
-            credits: usage.credits,
-            tokens: usage.tokens || null,
-            latencyMs: Date.now() - startedAt,
-          });
-        }
-
-        try {
-          controller.close();
-        } catch {
-          // already closed by an aborted client
-        }
-      }
-    },
-  });
-
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache, no-transform",
-      Connection: "keep-alive",
-      ...corsHeaders(request),
-    },
-  });
+    return new Response(releaseGeneration(slot, stream), { headers: streamHeaders });
+  } catch (error) {
+    await releaseGenerationSlot(slot);
+    throw error;
+  }
 }

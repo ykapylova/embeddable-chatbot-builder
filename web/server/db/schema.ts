@@ -7,6 +7,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  real,
   smallint,
   text,
   timestamp,
@@ -29,6 +30,34 @@ export const sourceStatusEnum = pgEnum("source_status", [
 export const conversationChannelEnum = pgEnum("conversation_channel", ["app", "widget"]);
 export const messageRoleEnum = pgEnum("message_role", ["user", "assistant"]);
 export const billingIntervalEnum = pgEnum("billing_interval", ["month", "year"]);
+
+/**
+ * How an assistant turn ended, recorded at write time rather than inferred
+ * later from an empty citation list. `abstained` and `no_context` are the two
+ * shapes of "the bot could not answer" and are what the Content Gaps screen
+ * reads; `quota`, `aborted` and `error` are failures of ours, not of the
+ * knowledge base, and must never be counted as gaps.
+ */
+export const answerStatusEnum = pgEnum("answer_status", [
+  "answered",
+  "abstained",
+  "no_context",
+  "quota",
+  "aborted",
+  "error",
+]);
+
+/** Why a source failed, in terms the UI can branch on — see PROJECT_SPEC.md and the §5 taxonomy. */
+export const sourceErrorCodeEnum = pgEnum("source_error_code", [
+  "PARSE_FAILED",
+  "EMBEDDING_FAILED",
+  "TIMEOUT",
+  "UNSUPPORTED_CONTENT",
+  "EMPTY_SOURCE",
+  "STORAGE_FAILED",
+  "LIMIT_CHARS",
+  "UNKNOWN",
+]);
 
 // ─── Accounts and bots ──────────────────────────────────────────────────────
 
@@ -89,6 +118,13 @@ export const sourcesTable = pgTable(
     sourceUrl: text("source_url"),
     status: sourceStatusEnum("status").notNull().default("pending"),
     error: text("error"),
+    // The machine-readable half of `error`: the sentence is for the owner, the
+    // code is what the UI branches on (offer Retry, link to /billing).
+    errorCode: sourceErrorCodeEnum("error_code"),
+    // Bumped when an indexing run starts, and carried into the run's commit so
+    // a slow run whose version has moved on discards its own results instead
+    // of overwriting a fresher one.
+    indexVersion: integer("index_version").notNull().default(0),
     charCount: integer("char_count").notNull().default(0),
     chunkCount: integer("chunk_count").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
@@ -160,11 +196,27 @@ export const messagesTable = pgTable(
     content: text("content").notNull(),
     citations: jsonb("citations").notNull().default([]),
     rating: smallint("rating"),
+    // Idempotency key for one turn, minted by the client and stable across its
+    // Retry button. Only the assistant row carries it, which is what lets the
+    // unique index below stand in for a lock: a second generation for the same
+    // turn loses the insert race and replays the stored answer instead.
+    requestId: text("request_id"),
+    answerStatus: answerStatusEnum("answer_status"),
     // model/credits/tokens replace a separate spend audit log: account usage is
     // fully reconstructible from these rows.
     model: text("model"),
     credits: integer("credits").notNull().default(0),
     tokens: integer("tokens"),
+    inputTokens: integer("input_tokens"),
+    outputTokens: integer("output_tokens"),
+    // How the answer was produced, so "slow" and "wrong" can be resolved into
+    // a stage instead of a guess. Vercel's log retention is short; these are
+    // the durable half.
+    cacheHit: boolean("cache_hit").notNull().default(false),
+    retrievalCount: integer("retrieval_count"),
+    topScore: real("top_score"),
+    retrievalMs: integer("retrieval_ms"),
+    firstTokenMs: integer("first_token_ms"),
     latencyMs: integer("latency_ms"),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
       .defaultNow()
@@ -172,6 +224,7 @@ export const messagesTable = pgTable(
   },
   (table) => [
     index("messages_conversation_id_created_at_idx").on(table.conversationId, table.createdAt),
+    uniqueIndex("messages_conversation_request_idx").on(table.conversationId, table.requestId),
   ],
 );
 
@@ -265,3 +318,50 @@ export const processedStripeEventsTable = pgTable("processed_stripe_events", {
     .defaultNow()
     .notNull(),
 });
+
+// ─── Widget abuse controls ──────────────────────────────────────────────────
+
+/**
+ * Fixed-window request counters, shared by every instance.
+ *
+ * They live in Postgres rather than in process memory because a serverless
+ * deployment runs many instances at once: a module-level Map makes "10 messages
+ * a minute per visitor" mean "10 per visitor per warm lambda", which is no
+ * limit at all against anything distributed. One row per (route, dimension,
+ * key); the row is rewritten rather than appended to, so the table stays the
+ * size of the traffic in one window.
+ */
+export const widgetRateLimitsTable = pgTable(
+  "widget_rate_limits",
+  {
+    key: text("key").primaryKey(),
+    hits: integer("hits").notNull().default(0),
+    expiresAt: timestamp("expires_at", { withTimezone: true, mode: "string" }).notNull(),
+  },
+  (table) => [index("widget_rate_limits_expires_at_idx").on(table.expiresAt)],
+);
+
+/**
+ * Concurrent generations per bot, one row per occupied slot.
+ *
+ * Numbered slots rather than a counter: claiming one is an insert on
+ * `(bot_id, slot_no)`, so two instances racing for the last slot are settled by
+ * the unique index instead of by whoever read the count first. `expires_at`
+ * makes a lost release self-healing — a slot whose route died is reclaimable
+ * once the TTL passes.
+ */
+export const widgetGenerationSlotsTable = pgTable(
+  "widget_generation_slots",
+  {
+    botId: uuid("bot_id")
+      .notNull()
+      .references(() => botsTable.id, { onDelete: "cascade" }),
+    slotNo: integer("slot_no").notNull(),
+    // Held by the route that reserved the slot, and required to release it, so
+    // a late release cannot free a slot that has since been reclaimed and
+    // handed to a different generation.
+    token: uuid("token").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true, mode: "string" }).notNull(),
+  },
+  (table) => [uniqueIndex("widget_generation_slots_pk").on(table.botId, table.slotNo)],
+);

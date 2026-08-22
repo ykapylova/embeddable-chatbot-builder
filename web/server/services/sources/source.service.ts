@@ -19,7 +19,7 @@ import { invalidateAnswerCache } from "server/services/answer/cache";
 import { assertPlan } from "server/services/plan.service";
 import { uploadBytesToChatBucket } from "server/services/supabase-storage.service";
 
-import { SourceContentError, SourceValidationError } from "./errors";
+import { SourceBusyError, SourceContentError, SourceValidationError } from "./errors";
 import { ingestSource } from "./ingest.service";
 import { extractTextForFile, extractTextFromHtml } from "./parse.service";
 import { discardSourceBlobs } from "./storage-cleanup.service";
@@ -58,6 +58,7 @@ function toSource(row: SourceRow): Source {
     sourceUrl: row.sourceUrl,
     status: row.status,
     error: row.error,
+    errorCode: row.errorCode,
     charCount: row.charCount,
     chunkCount: row.chunkCount,
     createdAt: row.createdAt,
@@ -114,37 +115,53 @@ async function createAndProcess(
     throw error;
   }
 
-  await sourceRepository.update(created.id, botId, { status: "processing" });
+  const claimed = await sourceRepository.beginIndexing(created.id, botId);
+  const indexVersion = claimed?.indexVersion ?? created.indexVersion + 1;
 
   let rawText: string;
   try {
     rawText = await getRawText();
   } catch (error) {
-    const message =
-      error instanceof SourceContentError
-        ? error.message
-        : "Could not read this source. Try again.";
-    if (!(error instanceof SourceContentError)) {
-      console.error("[sourceService] extraction failed", created.id, error);
-    }
-    const failed = await sourceRepository.update(created.id, botId, { status: "failed", error: message });
-    return toSource(failed ?? created);
+    return toSource(await markExtractionFailed(created, error, "[sourceService] extraction failed"));
   }
 
-  const finalRow = await ingestSource(created, rawText, plan);
+  const finalRow = await ingestSource(claimed ?? created, rawText, plan, indexVersion);
   return toSource(finalRow);
+}
+
+/**
+ * The one place an extraction failure becomes a stored row, so the sentence and
+ * the code can never be written by one path and forgotten by another.
+ */
+async function markExtractionFailed(
+  source: SourceRow,
+  error: unknown,
+  logLabel: string,
+): Promise<SourceRow> {
+  const expected = error instanceof SourceContentError;
+  if (!expected) console.error(logLabel, source.id, error);
+
+  const message = expected ? error.message : "Could not read this source. Try again.";
+  const errorCode = expected ? error.code : "UNKNOWN";
+
+  const failed = await sourceRepository.update(source.id, source.botId, {
+    status: "failed",
+    error: message,
+    errorCode,
+  });
+  return failed ?? { ...source, status: "failed", error: message, errorCode };
 }
 
 async function getRawTextForReindex(source: SourceRow): Promise<string> {
   if (source.type === "url") {
     if (!source.sourceUrl) {
-      throw new SourceContentError("This source has no URL to re-fetch.");
+      throw new SourceContentError("This source has no URL to re-fetch.", "UNSUPPORTED_CONTENT");
     }
     return extractTextFromHtml(await fetchUrlHtml(source.sourceUrl));
   }
 
   if (!source.storageKey) {
-    throw new SourceContentError("This source has no stored content to reindex.");
+    throw new SourceContentError("This source has no stored content to reindex.", "STORAGE_FAILED");
   }
 
   const bytes = await downloadFromChatBucket(source.storageKey);
@@ -152,7 +169,7 @@ async function getRawTextForReindex(source: SourceRow): Promise<string> {
   if (source.type === "file") {
     const extension = extensionFromFilename(source.storageKey);
     if (!isAllowedSourceFileExtension(extension)) {
-      throw new SourceContentError("This file's format is no longer supported.");
+      throw new SourceContentError("This file's format is no longer supported.", "UNSUPPORTED_CONTENT");
     }
     return extractTextForFile(bytes, extension);
   }
@@ -279,24 +296,27 @@ export const sourceService = {
     const source = await sourceRepository.findOwned(sourceId, botId);
     if (!source) return null;
 
-    await sourceRepository.update(sourceId, botId, { status: "processing", error: null });
+    // Two clicks on Retry used to be two full runs — two fetches, two embedding
+    // bills — with the later-*finishing* one winning, which is not necessarily
+    // the later-started one. Claiming the row is what makes the second click a
+    // no-op instead of a race.
+    const claimed = await sourceRepository.beginIndexing(sourceId, botId);
+    if (!claimed) {
+      throw new SourceBusyError("This source is already being indexed. Wait for it to finish.");
+    }
 
     let rawText: string;
     try {
-      rawText = await getRawTextForReindex(source);
+      rawText = await getRawTextForReindex(claimed);
     } catch (error) {
-      const message =
-        error instanceof SourceContentError ? error.message : "Could not re-read this source. Try again.";
-      if (!(error instanceof SourceContentError)) {
-        console.error("[sourceService.reindex] extraction failed", source.id, error);
-      }
-      const failed = await sourceRepository.update(sourceId, botId, { status: "failed", error: message });
-      return toSource(failed ?? source);
+      return toSource(
+        await markExtractionFailed(claimed, error, "[sourceService.reindex] extraction failed"),
+      );
     }
 
-    const finalRow = await ingestSource(source, rawText, plan);
+    const finalRow = await ingestSource(claimed, rawText, plan, claimed.indexVersion);
     return toSource(finalRow);
   },
 };
 
-export { SourceValidationError } from "./errors";
+export { SourceBusyError, SourceValidationError } from "./errors";

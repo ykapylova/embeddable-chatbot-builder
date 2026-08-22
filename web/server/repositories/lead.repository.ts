@@ -15,6 +15,17 @@ export const leadRepository = {
     return row;
   },
 
+  /** One conversation captures one lead — the check the public endpoint enforces. */
+  async existsForConversation(conversationId: string): Promise<boolean> {
+    const db = getDb();
+    const [row] = await db
+      .select({ id: leadsTable.id })
+      .from(leadsTable)
+      .where(eq(leadsTable.conversationId, conversationId))
+      .limit(1);
+    return row !== undefined;
+  },
+
   /** Keyset pagination on `(createdAt, id)` descending, matching `leads_bot_id_created_at_idx`. */
   async listPage(
     botId: string,

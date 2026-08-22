@@ -5,7 +5,7 @@ import { useMutation } from "@tanstack/react-query";
 import { Search } from "lucide-react";
 
 import { debugRetrieval } from "lib/api-client";
-import type { RetrievedChunk } from "lib/api-types/retrieval";
+import type { RetrievalCandidate, RetrievalDebugResponse } from "lib/api-types/retrieval";
 import { Button } from "components/ui/button";
 import { Input } from "components/ui/input";
 
@@ -28,8 +28,8 @@ export function RetrievalDebugPanel({ botId }: { botId: string }) {
     <div className="rounded-lg border border-[var(--border)] bg-[var(--panel)] p-6">
       <h2 className="text-base font-medium">Test retrieval</h2>
       <p className="mt-1 text-sm text-[var(--muted)]">
-        Ask a question and see which chunks of your knowledge base would be used to answer it — no
-        answer is generated here.
+        Ask a question and see which chunks of your knowledge base would be used to answer it —
+        including the ones that came close and were skipped. No answer is generated here.
       </p>
 
       <form
@@ -71,7 +71,9 @@ export function RetrievalDebugPanel({ botId }: { botId: string }) {
           </div>
         ) : null}
 
-        {search.isSuccess ? <ResultList chunks={search.data.chunks} /> : null}
+        {search.isSuccess ? (
+          <ResultList candidates={search.data.candidates} rule={search.data.rule} />
+        ) : null}
 
         {search.isIdle ? (
           <p className="text-sm text-[var(--muted)]">Results will show up here.</p>
@@ -81,32 +83,88 @@ export function RetrievalDebugPanel({ botId }: { botId: string }) {
   );
 }
 
-function ResultList({ chunks }: { chunks: RetrievedChunk[] }) {
-  if (chunks.length === 0) {
+/** Why the answer path passed this chunk over, in the owner's terms rather than the code's. */
+function rejectionLabel(
+  candidate: RetrievalCandidate,
+  rule: RetrievalDebugResponse["rule"],
+): string | null {
+  switch (candidate.rejectedBecause) {
+    case "below_floor":
+      return `Too far off — scored below the ${rule.floor.toFixed(2)} floor`;
+    case "outside_margin":
+      return `Much weaker than the best match — more than ${rule.margin.toFixed(2)} behind it`;
+    case "over_limit":
+      return "Good enough, but the answer only gets the top few";
+    default:
+      return null;
+  }
+}
+
+function ResultList({
+  candidates,
+  rule,
+}: {
+  candidates: RetrievalCandidate[];
+  rule: RetrievalDebugResponse["rule"];
+}) {
+  if (candidates.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-[var(--border)] p-4 text-center">
-        <p className="text-sm">No relevant chunks found.</p>
+        <p className="text-sm">Nothing in this knowledge base matched at all.</p>
         <p className="mt-1 text-xs text-[var(--muted)]">
-          This is expected when nothing in the knowledge base scores above the relevance cutoff —
-          it is exactly what makes the bot say &ldquo;I don&apos;t know&rdquo; instead of guessing.
+          Not even a weak match — the bot will say &ldquo;I don&apos;t know&rdquo; for this
+          question. Add a source that covers it.
         </p>
       </div>
     );
   }
 
+  const kept = candidates.filter((candidate) => candidate.kept);
+
   return (
-    <ul className="space-y-2">
-      {chunks.map((chunk) => (
-        <li key={chunk.id} className="rounded-lg border border-[var(--border)] p-4">
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-sm font-medium">{chunk.sourceTitle}</span>
-            <span className="shrink-0 rounded-full bg-[var(--panel-soft)] px-2 py-0.5 text-xs font-medium text-[var(--muted)]">
-              {chunk.score.toFixed(2)}
-            </span>
-          </div>
-          <p className="mt-2 line-clamp-4 text-sm text-[var(--muted)]">{chunk.content}</p>
-        </li>
-      ))}
-    </ul>
+    <div className="space-y-3">
+      {kept.length === 0 ? (
+        <p className="rounded-lg border border-dashed border-[var(--border)] p-4 text-center text-sm">
+          Nothing scored high enough to answer with — but these came close. The bot will say
+          &ldquo;I don&apos;t know&rdquo;.
+        </p>
+      ) : null}
+
+      <ul className="space-y-2">
+        {candidates.map((candidate) => {
+          const rejection = rejectionLabel(candidate, rule);
+          return (
+            <li
+              key={candidate.id}
+              className={
+                candidate.kept
+                  ? "rounded-lg border border-[var(--border)] p-4"
+                  : "rounded-lg border border-dashed border-[var(--border)] p-4 opacity-70"
+              }
+            >
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm font-medium">{candidate.sourceTitle}</span>
+                <div className="flex shrink-0 items-center gap-2">
+                  <span
+                    className={
+                      candidate.kept
+                        ? "rounded-full bg-[var(--brand-soft)] px-2 py-0.5 text-xs font-medium"
+                        : "rounded-full bg-[var(--panel-soft)] px-2 py-0.5 text-xs font-medium text-[var(--muted)]"
+                    }
+                  >
+                    {candidate.kept ? "Used" : "Skipped"}
+                  </span>
+                  <span className="rounded-full bg-[var(--panel-soft)] px-2 py-0.5 text-xs font-medium text-[var(--muted)]">
+                    {candidate.score.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+              {rejection ? <p className="mt-1 text-xs text-[var(--muted)]">{rejection}</p> : null}
+              <p className="mt-2 line-clamp-4 text-sm text-[var(--muted)]">{candidate.content}</p>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }

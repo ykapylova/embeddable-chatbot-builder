@@ -2,7 +2,10 @@ import Link from "next/link";
 
 import { Button } from "components/ui/button";
 
-const BRAND_GRADIENT = "linear-gradient(100deg, var(--brand-1), var(--brand-2))";
+/* Flat, not the brand gradient: white text over the gradient's amber end is
+   effectively invisible against its own background. The gradient stays on the
+   hero's glow, where nothing has to be read on top of it. */
+const CTA_BACKGROUND = "var(--brand-cta)";
 
 export function Hero({ signedIn }: { signedIn: boolean }) {
   return (
@@ -35,7 +38,7 @@ export function Hero({ signedIn }: { signedIn: boolean }) {
         >
           {signedIn ? (
             <Link href="/dashboard">
-              <Button size="lg" className="border-0 shadow-lg" style={{ background: BRAND_GRADIENT }}>
+              <Button size="lg" className="border-0 shadow-lg" style={{ background: CTA_BACKGROUND }}>
                 Go to dashboard
               </Button>
             </Link>
@@ -46,7 +49,7 @@ export function Hero({ signedIn }: { signedIn: boolean }) {
                   <Button
                     size="lg"
                     className="glow-ring border-0 shadow-lg hover:opacity-95"
-                    style={{ background: BRAND_GRADIENT }}
+                    style={{ background: CTA_BACKGROUND }}
                   >
                     Build your bot free
                   </Button>
