@@ -48,28 +48,22 @@ export function PricingSection({
             <button
               onClick={() => setBillingInterval("month")}
               className={cn(
-                "rounded-full px-4 py-1.5 text-sm font-medium transition",
-                billingInterval === "month" ? "text-white" : "text-[var(--muted)]",
-              )}
-              style={
+                "rounded-full px-4 py-1.5 text-sm font-medium transition active:scale-[0.98]",
                 billingInterval === "month"
-                  ? { background: "linear-gradient(100deg, var(--brand-1), var(--brand-2))" }
-                  : undefined
-              }
+                  ? "bg-[var(--chrome)] text-[var(--chrome-foreground)]"
+                  : "text-[var(--muted)] hover:text-[var(--foreground)]",
+              )}
             >
               Monthly
             </button>
             <button
               onClick={() => setBillingInterval("year")}
               className={cn(
-                "rounded-full px-4 py-1.5 text-sm font-medium transition",
-                billingInterval === "year" ? "text-white" : "text-[var(--muted)]",
-              )}
-              style={
+                "rounded-full px-4 py-1.5 text-sm font-medium transition active:scale-[0.98]",
                 billingInterval === "year"
-                  ? { background: "linear-gradient(100deg, var(--brand-1), var(--brand-2))" }
-                  : undefined
-              }
+                  ? "bg-[var(--chrome)] text-[var(--chrome-foreground)]"
+                  : "text-[var(--muted)] hover:text-[var(--foreground)]",
+              )}
             >
               Annual
             </button>
@@ -97,10 +91,7 @@ export function PricingSection({
                 )}
               >
                 {plan.recommended ? (
-                  <span
-                    className="absolute -top-3 left-6 rounded-full px-3 py-0.5 text-xs font-medium text-white"
-                    style={{ background: "linear-gradient(100deg, var(--brand-1), var(--brand-2))" }}
-                  >
+                  <span className="absolute -top-3 left-6 rounded-full bg-[var(--chrome)] px-3 py-0.5 text-xs font-medium text-[var(--chrome-foreground)]">
                     Most popular
                   </span>
                 ) : null}

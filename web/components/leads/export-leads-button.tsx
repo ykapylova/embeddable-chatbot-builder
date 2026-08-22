@@ -39,7 +39,7 @@ export function ExportLeadsButton({ botId }: { botId: string }) {
         {exportCsv.isPending ? "Exporting…" : "Export CSV"}
       </Button>
       {exportCsv.isError ? (
-        <span className="text-xs text-red-600">
+        <span className="text-xs text-[var(--danger)]">
           {exportCsv.error instanceof Error ? exportCsv.error.message : "Could not export leads"}
         </span>
       ) : null}

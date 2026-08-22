@@ -50,7 +50,7 @@ export function BotPlayground({ botId }: { botId: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-[var(--muted)]">Try the bot the way a visitor would.</p>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={startNewChat}>
@@ -73,7 +73,7 @@ export function BotPlayground({ botId }: { botId: string }) {
 
       {bot.isError ? (
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-6 text-center">
-          <p className="text-sm text-red-600">
+          <p className="text-sm text-[var(--danger)]">
             {bot.error instanceof Error ? bot.error.message : "Could not load this bot"}
           </p>
           <Button variant="outline" className="mt-3" onClick={() => bot.refetch()}>

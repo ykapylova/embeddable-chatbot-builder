@@ -16,6 +16,7 @@ import {
 import { queryKeys } from "lib/query-keys";
 import { Button } from "components/ui/button";
 import { Input } from "components/ui/input";
+import { Textarea } from "components/ui/textarea";
 
 type FormState = {
   name: string;
@@ -90,7 +91,7 @@ export function BotSettingsForm({ botId }: { botId: string }) {
   if (bot.isError) {
     return (
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-6 text-center">
-        <p className="text-sm text-red-600">
+        <p className="text-sm text-[var(--danger)]">
           {bot.error instanceof Error ? bot.error.message : "Could not load bot"}
         </p>
         <Button variant="outline" className="mt-3" onClick={() => bot.refetch()}>
@@ -179,13 +180,12 @@ export function BotSettingsForm({ botId }: { botId: string }) {
           label="System instruction"
           hint="Optional. Extra context about your product, audience or rules."
         >
-          <textarea
+          <Textarea
             value={form.systemPrompt}
             maxLength={BOT_PROMPT_MAX}
             rows={4}
             placeholder="You are the support assistant for Acme, a project management tool for design teams."
             onChange={(event) => patch({ systemPrompt: event.target.value })}
-            className="w-full rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-2 text-sm outline-none transition focus:border-[#c9d0dd]"
           />
         </Field>
 
@@ -197,14 +197,14 @@ export function BotSettingsForm({ botId }: { botId: string }) {
             <span className="text-sm text-[var(--muted)]">Saved</span>
           ) : null}
           {save.isError ? (
-            <span className="text-sm text-red-600">
+            <span className="text-sm text-[var(--danger)]">
               {save.error instanceof Error ? save.error.message : "Could not save"}
             </span>
           ) : null}
         </div>
       </form>
 
-      <section className="rounded-2xl border border-red-200 bg-[var(--panel)] p-4">
+      <section className="rounded-2xl border border-[var(--danger-border)] bg-[var(--panel)] p-4">
         <h2 className="text-sm font-medium">Delete this bot</h2>
         <p className="mt-1 text-sm text-[var(--muted)]">
           Removes the bot, its knowledge base and its conversations. The widget stops answering
@@ -231,7 +231,7 @@ export function BotSettingsForm({ botId }: { botId: string }) {
         )}
 
         {remove.isError ? (
-          <p className="mt-2 text-sm text-red-600">
+          <p className="mt-2 text-sm text-[var(--danger)]">
             {remove.error instanceof Error ? remove.error.message : "Could not delete bot"}
           </p>
         ) : null}

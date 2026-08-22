@@ -14,6 +14,7 @@ import { queryKeys } from "lib/query-keys";
 import type { Source } from "lib/api-types/source";
 import { Button } from "components/ui/button";
 import { Input } from "components/ui/input";
+import { Textarea } from "components/ui/textarea";
 
 function formatTime(iso: string): string {
   return new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
@@ -119,21 +120,20 @@ function GapComposer({
         maxLength={SOURCE_FAQ_QUESTION_MAX_CHARS}
         placeholder="Question"
       />
-      <textarea
+      <Textarea
         value={answer}
         onChange={(event) => setAnswer(event.target.value)}
         maxLength={SOURCE_FAQ_ANSWER_MAX_CHARS}
         rows={4}
         autoFocus
         placeholder="The answer, written the way you'd want it read back."
-        className="w-full rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-2 text-sm outline-none transition focus:border-[#c9d0dd]"
       />
       <div className="flex items-center gap-3">
         <Button type="submit" size="sm" disabled={!canSubmit}>
           {save.isPending ? "Saving…" : "Save as FAQ"}
         </Button>
         {save.isError ? (
-          <span className="text-xs text-red-600">
+          <span className="text-xs text-[var(--danger)]">
             {save.error instanceof Error ? save.error.message : "Could not save this FAQ"}
           </span>
         ) : null}

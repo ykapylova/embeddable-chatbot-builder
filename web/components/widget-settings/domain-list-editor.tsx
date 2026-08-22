@@ -93,7 +93,7 @@ export function DomainListEditor({ botId, domains }: { botId: string; domains: s
                 type="button"
                 onClick={() => handleRemove(domain)}
                 disabled={mutation.isPending}
-                className="text-[var(--muted)] transition hover:text-red-600 disabled:opacity-50"
+                className="text-[var(--muted)] transition hover:text-[var(--danger)] disabled:opacity-50"
                 aria-label={`Remove ${domain}`}
               >
                 <X className="h-4 w-4" />
@@ -123,7 +123,7 @@ export function DomainListEditor({ botId, domains }: { botId: string; domains: s
         </Button>
       </div>
       {error ? (
-        <p className="text-sm text-red-600">
+        <p className="text-sm text-[var(--danger)]">
           <PlanLimitMessage error={error} fallback="Could not update domains" />
         </p>
       ) : null}

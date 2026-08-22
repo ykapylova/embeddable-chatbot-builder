@@ -36,7 +36,7 @@ export type BubblePosition = (typeof BUBBLE_POSITIONS)[number]["value"];
  * form, its preview and the playground all start from the same values.
  */
 export const THEME_DEFAULTS = {
-  accentColor: "#4f46e5",
+  accentColor: "#e85c7b",
   placeholder: "Ask a question…",
   position: "bottom-right" as BubblePosition,
 } as const;

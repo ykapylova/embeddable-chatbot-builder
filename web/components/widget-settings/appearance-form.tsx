@@ -81,7 +81,7 @@ export function AppearanceForm({ botId }: { botId: string }) {
   if (bot.isError) {
     return (
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-6 text-center">
-        <p className="text-sm text-red-600">
+        <p className="text-sm text-[var(--danger)]">
           {bot.error instanceof Error ? bot.error.message : "Could not load this bot"}
         </p>
         <Button variant="outline" className="mt-3" onClick={() => bot.refetch()}>
@@ -230,7 +230,7 @@ export function AppearanceForm({ botId }: { botId: string }) {
             <span className="text-sm text-[var(--muted)]">Saved</span>
           ) : null}
           {save.isError ? (
-            <span className="text-sm text-red-600">
+            <span className="text-sm text-[var(--danger)]">
               {save.error instanceof Error ? save.error.message : "Could not save"}
             </span>
           ) : null}

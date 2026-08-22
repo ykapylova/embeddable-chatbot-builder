@@ -86,7 +86,7 @@ export function UpgradePlans({ reason }: { reason: UpgradeReason | null }) {
 
       {catalogue.isError ? (
         <Card className="border border-[var(--border)] text-center">
-          <p className="text-sm text-red-600">
+          <p className="text-sm text-[var(--danger)]">
             {catalogue.error instanceof Error ? catalogue.error.message : "Could not load plans"}
           </p>
           <Button variant="outline" className="mt-3" onClick={() => catalogue.refetch()}>
@@ -180,7 +180,7 @@ export function UpgradePlans({ reason }: { reason: UpgradeReason | null }) {
             .
           </p>
         ) : (
-          <p className="text-center text-sm text-red-600">
+          <p className="text-center text-sm text-[var(--danger)]">
             {checkout.error instanceof Error ? checkout.error.message : "Could not start checkout"}
           </p>
         )

@@ -10,6 +10,14 @@ async function extractTextFromPdf(bytes: Buffer): Promise<string> {
   try {
     const result = await parser.getText();
     return result.text ?? "";
+  } catch (error) {
+    // A file the parser cannot open at all — truncated, encrypted, or simply
+    // not a PDF behind a .pdf name. Left unwrapped it surfaced as the generic
+    // "Try again", which is advice that cannot work: the bytes will not change.
+    console.error("[extractTextFromPdf]", error);
+    throw new SourceContentError(
+      "This PDF could not be opened — it may be corrupted or password-protected.",
+    );
   } finally {
     await parser.destroy();
   }

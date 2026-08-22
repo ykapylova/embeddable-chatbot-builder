@@ -3,14 +3,9 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { getConversationUsage } from "lib/api-client";
+import { formatCount } from "lib/format";
 import { queryKeys } from "lib/query-keys";
 import { cn } from "lib/utils";
-
-function formatNumber(n: number): string {
-  if (n >= 1_000_000) return `${Math.round(n / 1_000_000)}m`;
-  if (n >= 1_000) return `${Math.round(n / 1_000)}k`;
-  return String(n);
-}
 
 function UsageBar({ label, used, limit }: { label: string; used: number; limit: number }) {
   const percent = Math.min(100, (used / limit) * 100);
@@ -19,14 +14,14 @@ function UsageBar({ label, used, limit }: { label: string; used: number; limit: 
   return (
     <div>
       <div className="flex items-baseline justify-between text-sm">
-        <span className={isOverLimit ? "font-medium text-red-600" : "text-[var(--foreground)]"}>
-          {label}: {formatNumber(used)} of {formatNumber(limit)}
+        <span className={isOverLimit ? "font-medium text-[var(--danger)]" : "text-[var(--foreground)]"}>
+          {label}: {formatCount(used)} of {formatCount(limit)}
         </span>
-        {isOverLimit ? <span className="text-xs text-red-600">Over plan limit</span> : null}
+        {isOverLimit ? <span className="text-xs text-[var(--danger)]">Over plan limit</span> : null}
       </div>
       <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-[var(--panel-soft)]">
         <div
-          className={cn("h-full rounded-full", isOverLimit ? "bg-red-600" : "bg-[var(--accent)]")}
+          className={cn("h-full rounded-full", isOverLimit ? "bg-[var(--danger)]" : "bg-[var(--accent)]")}
           style={{ width: `${percent}%` }}
         />
       </div>
@@ -51,7 +46,7 @@ export function ConversationUsageSummary({ botId }: { botId: string }) {
 
   if (usage.isError) {
     return (
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-4 text-sm text-red-600">
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-4 text-sm text-[var(--danger)]">
         Could not load usage.{" "}
         <button type="button" className="underline underline-offset-2" onClick={() => usage.refetch()}>
           Try again
