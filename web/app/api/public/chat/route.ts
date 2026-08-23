@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { z, ZodError } from "zod";
 
 import { planLimits } from "lib/plans";
+import { env } from "server/env";
 import { logRefusal } from "server/observability/log";
 import { botRepository } from "server/repositories/bot.repository";
 import { conversationRepository } from "server/repositories/conversation.repository";
@@ -16,7 +17,7 @@ import {
   WIDGET_MAX_MESSAGES_PER_CONVERSATION,
   WIDGET_MESSAGE_MAX_LENGTH,
 } from "server/services/widget/limits";
-import { isHostAllowed, resolveRequestHost } from "server/services/widget/origin";
+import { isSelfOriginated, resolveRequestHost } from "server/services/widget/origin";
 import {
   checkRateLimit,
   releaseGeneration,
@@ -69,15 +70,18 @@ export async function POST(request: Request): Promise<Response> {
     return err(request, "This assistant is currently unavailable.", 403, "BOT_UNAVAILABLE");
   }
 
-  const host = resolveRequestHost(request);
-  if (!isHostAllowed(host, bot.allowedDomains)) {
-    logRefusal("widget.blocked", { code: "DOMAIN_NOT_ALLOWED", botId: bot.id, route: "chat", host });
-    return err(
-      request,
-      "This site is not authorized to use this chat widget.",
-      403,
-      "DOMAIN_NOT_ALLOWED",
-    );
+  // The bot's allowed domains are enforced on the iframe's own navigation, in
+  // app/embed/[publicKey]/page.tsx — this call is same-origin from inside that
+  // iframe, so its Origin says nothing about the site the visitor is on. What
+  // is still worth asking here is whether the caller is that iframe at all.
+  if (!isSelfOriginated(request, env.appUrl)) {
+    logRefusal("widget.blocked", {
+      code: "FOREIGN_ORIGIN",
+      botId: bot.id,
+      route: "chat",
+      host: resolveRequestHost(request),
+    });
+    return err(request, "This request did not come from the chat widget.", 403, "FOREIGN_ORIGIN");
   }
 
   const ip = resolveRequestIp(request);

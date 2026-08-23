@@ -208,8 +208,11 @@ role, which bypasses RLS. No policies exist so that Supabase's public anon key c
 tables through PostgREST.
 
 **The widget's protection is the domain allowlist**, not the public key. The key is meant to be
-visible in the page source; what stops someone reusing it is that the request's `Origin` has to be
-on the bot's list. A bot with an empty list allows nothing.
+visible in the page source; what stops someone reusing it is that the panel only renders for a page
+whose hostname is on the bot's list. That is checked on the iframe's own navigation, using the
+`Referer` the browser sets to the embedding page — the widget's later API calls are made from inside
+that iframe, so their `Origin` is this app and says nothing about where the visitor is. A bot with an
+empty list allows nothing.
 
 **Plan limits live in one place**, `lib/plans.ts`, and the client never sees a Stripe price id: it
 asks to subscribe to a plan and an interval, and the server resolves the price.
