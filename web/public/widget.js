@@ -130,7 +130,7 @@
   }
 
   function setBubbleIcon() {
-    bubble.textContent = state.open ? "✕" : "💬";
+    bubble.innerHTML = state.open ? CLOSE_ICON : CHAT_ICON;
     bubble.setAttribute("aria-label", state.open ? "Close chat" : "Open chat");
   }
 
@@ -175,6 +175,16 @@
   // ---- Bubble button, in a shadow root so the host page's CSS cannot reach
   // it and the widget's own styles cannot leak back out. ----
 
+  // An inline SVG rather than an emoji: emoji render differently on every platform
+  // and inherit the host page's font stack even inside the shadow root.
+  var CHAT_ICON =
+    '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+    '<path d="M4 11.5c0-3.9 3.6-7 8-7s8 3.1 8 7-3.6 7-8 7c-.9 0-1.8-.1-2.6-.4l-4 1.7a.5.5 0 0 1-.7-.6l.8-3A6.6 6.6 0 0 1 4 11.5Z"' +
+    ' stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>';
+  var CLOSE_ICON =
+    '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+    '<path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+
   var bubbleHost = document.createElement("div");
   bubbleHost.style.all = "initial";
   bubbleHost.style.position = "fixed";
@@ -193,7 +203,7 @@
   bubble.style.borderRadius = "50%";
   bubble.style.border = "none";
   bubble.style.cursor = "pointer";
-  bubble.style.background = "#e85c7b";
+  bubble.style.background = "linear-gradient(135deg, #f5a623 0%, #ef5b8c 55%, #d94fb0 100%)";
   bubble.style.boxShadow = BUBBLE_SHADOW;
   bubble.style.display = "flex";
   bubble.style.alignItems = "center";
