@@ -31,6 +31,13 @@ function getPool() {
     // and every route 500s at once with "remaining connection slots are
     // reserved". A request uses one connection at a time; a small ceiling is
     // what keeps the total bounded as instances multiply.
+    //
+    // The ceiling bounds sockets, not how long the database holds a server
+    // connection for each one — that is the pooler's mode, which is why every
+    // deployed environment points `DATABASE_URL` at the transaction pooler
+    // (port 6543; see `.env.example`). On the session pooler a frozen
+    // instance's socket keeps a server connection to itself until the socket
+    // dies, and the idle timeout below never gets to run.
     max: POOL_MAX_CONNECTIONS,
     idleTimeoutMillis: 10_000,
     // Fail fast rather than queue behind an exhausted pooler: a request that
