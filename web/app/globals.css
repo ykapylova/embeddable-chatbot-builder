@@ -145,6 +145,18 @@ body {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
   }
+
+  /*
+   * Fields already have a border, so the offset ring read as a second outline
+   * around it — and, being drawn outside the box, it made scrollable parents
+   * (the composer, the lead bar) show a scrollbar on focus. Drawing it just
+   * inside the edge covers the border instead of doubling it.
+   */
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline-offset: -1px;
+  }
 }
 
 @keyframes chat-fade-up {
