@@ -75,7 +75,7 @@ export function PricingSection({
           ) : null}
         </div>
 
-        <div className="mt-10 grid gap-6 sm:grid-cols-3">
+        <div className="mt-10 grid items-stretch gap-6 sm:grid-cols-3">
           {plans.map((plan) => {
             const monthlyEquivalent =
               billingInterval === "month" ? plan.monthlyPrice : Math.round(plan.yearlyPrice / 12);
@@ -84,7 +84,7 @@ export function PricingSection({
               <div
                 key={plan.id}
                 className={cn(
-                  "relative flex flex-col rounded-xl border bg-[var(--panel)] p-6 transition duration-200",
+                  "relative flex h-full flex-col rounded-xl border bg-[var(--panel)] p-6 transition duration-200",
                   plan.recommended
                     ? "glow-ring scale-[1.02] border-transparent"
                     : "border-[var(--border)] hover:-translate-y-1 hover:shadow-lg",
@@ -97,33 +97,29 @@ export function PricingSection({
                 ) : null}
 
                 <h3 className="text-lg font-semibold">{plan.name}</h3>
-                <p className="mt-1 text-sm text-[var(--muted)]">{plan.tagline}</p>
+                <p className="mt-1 min-h-10 text-sm text-[var(--muted)]">{plan.tagline}</p>
 
                 <div className="mt-5 flex items-baseline gap-1">
                   <span className="text-3xl font-semibold">${monthlyEquivalent}</span>
                   <span className="text-sm text-[var(--muted)]">/mo</span>
                 </div>
-                {billingInterval === "year" && plan.monthlyPrice > 0 ? (
-                  <p className="mt-1 text-xs text-[var(--muted)]">
-                    billed ${plan.yearlyPrice}/year
-                  </p>
-                ) : null}
+                <p
+                  className={cn(
+                    "mt-1 text-xs text-[var(--muted)]",
+                    billingInterval === "year" && plan.monthlyPrice > 0 ? null : "invisible",
+                  )}
+                  aria-hidden={billingInterval === "year" && plan.monthlyPrice > 0 ? undefined : true}
+                >
+                  billed ${plan.yearlyPrice}/year
+                </p>
 
                 <Link href={signedIn ? "/dashboard" : "/sign-up"} className="mt-6">
-                  <Button
-                    className={cn("w-full", plan.recommended && "border-0")}
-                    variant={plan.recommended ? "default" : "outline"}
-                    style={
-                      plan.recommended
-                        ? { background: "var(--brand-cta)" }
-                        : undefined
-                    }
-                  >
+                  <Button className="w-full" variant={plan.recommended ? "default" : "outline"}>
                     {signedIn ? "Go to dashboard" : plan.monthlyPrice === 0 ? "Start free" : "Choose " + plan.name}
                   </Button>
                 </Link>
 
-                <ul className="mt-6 space-y-2.5 text-sm">
+                <ul className="mt-6 flex-1 space-y-2.5 text-sm">
                   {plan.features.map((feature) => (
                     <li key={feature} className="flex items-start gap-2">
                       <Check className="mt-0.5 h-4 w-4 shrink-0 text-[var(--chip-teal-fg)]" />
