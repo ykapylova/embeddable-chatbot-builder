@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 
-const SNIPPET = '<script src="https://cdn.docsy.app/widget.js" data-bot="YOUR_BOT_ID" defer></script>';
+const SNIPPET = '<script src="https://web-tau-drab-58.vercel.app/widget.js" data-bot-key="pk_d014518f94a8502e457ebc55a4aada01"></script>';
 
 export function EmbedSnippet() {
   const [copied, setCopied] = useState(false);
