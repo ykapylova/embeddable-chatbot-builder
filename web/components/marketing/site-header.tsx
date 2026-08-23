@@ -20,7 +20,7 @@ export async function SiteHeader() {
           <Link href="/#how-it-works" className="transition hover:text-[var(--foreground)]">
             How it works
           </Link>
-          <Link href="/pricing" className="transition hover:text-[var(--foreground)]">
+          <Link href="/#pricing" className="transition hover:text-[var(--foreground)]">
             Pricing
           </Link>
           <Link href="/#faq" className="transition hover:text-[var(--foreground)]">

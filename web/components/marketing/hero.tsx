@@ -54,7 +54,7 @@ export function Hero({ signedIn }: { signedIn: boolean }) {
                     Build your bot free
                   </Button>
                 </Link>
-                <Link href="/pricing">
+                <Link href="/#pricing">
                   <Button size="lg" variant="outline">
                     See pricing
                   </Button>
