@@ -1,10 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
-import { LogOut } from "lucide-react";
 
 import logo from "app/logo.png";
 import { ConsoleMobileNav, ConsoleSidebarNav } from "components/layout/console-nav";
+import { SignOutIconButton } from "components/layout/sign-out-icon-button";
 import { PageTransition } from "components/providers/page-transition";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -22,7 +22,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="mt-auto flex items-center gap-2.5 rounded-xl px-2 py-2 text-sm text-white/70">
           <UserButton />
           <span className="flex-1">Account</span>
-          <LogOut className="h-4 w-4 opacity-60" />
+          <SignOutIconButton />
         </div>
       </aside>
 
