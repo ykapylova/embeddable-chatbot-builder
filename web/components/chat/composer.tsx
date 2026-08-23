@@ -79,7 +79,7 @@ export function Composer({
             submit();
           }
         }}
-        className="max-h-32 min-h-9 flex-1 resize-none overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-2 text-sm transition focus:border-[var(--accent)]"
+        className="max-h-32 min-h-9 flex-1 resize-none overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-2 text-sm transition"
       />
 
       {isStreaming ? (

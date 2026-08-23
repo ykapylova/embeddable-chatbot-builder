@@ -76,7 +76,7 @@ export function LeadCaptureBar({
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           placeholder="you@example.com"
-          className="min-w-0 flex-1 rounded-md border border-[var(--border)] bg-[var(--panel)] px-2 py-1.5 text-xs transition focus:border-[var(--accent)]"
+          className="min-w-0 flex-1 rounded-md border border-[var(--border)] bg-[var(--panel)] px-2 py-1.5 text-xs transition"
         />
         <button
           type="submit"

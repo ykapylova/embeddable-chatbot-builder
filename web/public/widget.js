@@ -279,8 +279,27 @@
     resizeTimer = setTimeout(syncMode, 150);
   });
 
+  /**
+   * The panel is a full page load — SSR, theme lookup, React bundle. Doing it
+   * on the first click made the first open feel broken, so the iframe is
+   * created (hidden) once the host page is idle. It costs one request the
+   * visitor may never use; it buys an instant first open.
+   */
+  function prewarm() {
+    if (state.iframe) return;
+    ensureIframe();
+  }
+
+  function schedulePrewarm() {
+    var idle = window.requestIdleCallback;
+    if (idle) idle(prewarm, { timeout: 4000 });
+    else setTimeout(prewarm, 1500);
+  }
+
   function mount() {
     document.body.appendChild(bubbleHost);
+    if (document.readyState === "complete") schedulePrewarm();
+    else window.addEventListener("load", schedulePrewarm, { once: true });
   }
 
   if (document.body) {
