@@ -1,7 +1,9 @@
+import Image from "next/image";
 import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
 import { LogOut } from "lucide-react";
 
+import logo from "app/logo.png";
 import { ConsoleMobileNav, ConsoleSidebarNav } from "components/layout/console-nav";
 import { PageTransition } from "components/providers/page-transition";
 
@@ -10,7 +12,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen gap-4 p-3 sm:p-4">
       <aside className="hidden w-60 shrink-0 flex-col rounded-3xl bg-[var(--chrome)] p-4 text-[var(--chrome-foreground)] sm:flex">
         <Link href="/dashboard" className="mb-8 flex items-center gap-2 rounded-xl px-2">
-          <span className="h-2.5 w-2.5 rounded-full bg-[var(--accent)]" />
+          <Image src={logo} alt="" width={24} height={24} className="rounded-lg" />
           <span className="text-base font-semibold">Docsy</span>
         </Link>
 
@@ -28,7 +30,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <header className="mb-3 flex flex-col gap-3 rounded-2xl bg-[var(--chrome)] px-4 py-3 text-[var(--chrome-foreground)] sm:hidden">
           <div className="flex items-center justify-between">
             <Link href="/dashboard" className="flex items-center gap-2 rounded-xl text-base font-semibold">
-              <span className="h-2.5 w-2.5 rounded-full bg-[var(--accent)]" />
+              <Image src={logo} alt="" width={22} height={22} className="rounded-lg" />
               Docsy
             </Link>
             <UserButton />

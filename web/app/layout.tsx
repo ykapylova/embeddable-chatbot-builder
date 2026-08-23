@@ -15,11 +15,6 @@ export const metadata: Metadata = {
   title: "Docsy — turn your docs into a support agent",
   description:
     "Upload your documentation and get a chatbot that answers your customers — in your app and as an embeddable widget.",
-  icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon.ico",
-    apple: "/favicon.ico",
-  },
 };
 
 export default function RootLayout({
