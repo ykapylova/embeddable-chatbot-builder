@@ -5,6 +5,7 @@ import remarkGfm from "remark-gfm";
 
 import { readableTextColor } from "lib/color-contrast";
 import { cn } from "lib/utils";
+import { BotAvatar } from "components/chat/bot-avatar";
 import type { ChatAssistantMessage, ChatMessage, ChatTheme } from "components/chat/types";
 
 const markdownComponents: Components = {
@@ -199,7 +200,8 @@ function ChatMessageBubbleImpl({
   }
 
   return (
-    <div className="flex justify-start">
+    <div className="flex justify-start gap-2">
+      <BotAvatar url={theme.avatarUrl} />
       <AssistantBubble message={message} onRate={onRate} onRetry={onRetry} />
     </div>
   );
