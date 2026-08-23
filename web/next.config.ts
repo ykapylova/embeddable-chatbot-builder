@@ -1,6 +1,17 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  experimental: {
+    // The client router treats a dynamic segment as stale the moment it is
+    // rendered (`dynamic` defaults to 0), so every console tab click refetches
+    // the RSC payload of a tab that was on screen seconds ago. Nothing under
+    // `(app)` renders server data — the pages are shells and every value comes
+    // from React Query on the client — so a reusable window costs no freshness
+    // and makes moving back and forth between tabs instant. Thirty seconds
+    // matches the query client's own `staleTime`, which keeps the two caches
+    // expiring together instead of one masking the other.
+    staleTimes: { dynamic: 30 },
+  },
   // pdf-parse bundles pdfjs-dist, which dynamically requires @napi-rs/canvas
   // to polyfill DOMMatrix in Node. Bundling that require breaks native
   // binary resolution on Vercel (works locally, 500s in production), so both
