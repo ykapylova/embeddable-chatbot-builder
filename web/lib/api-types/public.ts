@@ -34,7 +34,7 @@ export type PublicLeadRequest = {
 export type PublicWidgetErrorCode =
   | "BOT_NOT_FOUND"
   | "BOT_UNAVAILABLE"
-  | "DOMAIN_NOT_ALLOWED"
+  | "FOREIGN_ORIGIN"
   | "RATE_LIMITED"
   | "CONVERSATION_LIMIT"
   | "LEAD_CAPTURE_DISABLED"

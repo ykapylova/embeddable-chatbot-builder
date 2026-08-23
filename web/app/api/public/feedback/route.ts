@@ -1,12 +1,13 @@
 import { z, ZodError } from "zod";
 
+import { env } from "server/env";
 import { logRefusal } from "server/observability/log";
 import { jsonAck, jsonErr } from "server/http/json-api";
 import { botRepository } from "server/repositories/bot.repository";
 import { conversationRepository } from "server/repositories/conversation.repository";
 import { corsPreflight, withCors } from "server/services/widget/cors";
 import { rateMessage } from "server/services/widget/message-rating";
-import { isHostAllowed, resolveRequestHost } from "server/services/widget/origin";
+import { isSelfOriginated, resolveRequestHost } from "server/services/widget/origin";
 import { checkRateLimit } from "server/services/widget/rate-limit";
 import { resolveRequestIp } from "server/services/widget/request-ip";
 
@@ -48,10 +49,18 @@ export async function POST(request: Request): Promise<Response> {
   const bot = await botRepository.findByPublicKey(payload.publicKey);
   if (!bot) return err(request, "This assistant could not be found.", 404, "BOT_NOT_FOUND");
 
-  const host = resolveRequestHost(request);
-  if (!isHostAllowed(host, bot.allowedDomains)) {
-    logRefusal("widget.blocked", { code: "DOMAIN_NOT_ALLOWED", botId: bot.id, route: "feedback", host });
-    return err(request, "This site is not authorized to use this chat widget.", 403, "DOMAIN_NOT_ALLOWED");
+  // The bot's allowed domains are enforced on the iframe's own navigation, in
+  // app/embed/[publicKey]/page.tsx — this call is same-origin from inside that
+  // iframe, so its Origin says nothing about the site the visitor is on. What
+  // is still worth asking here is whether the caller is that iframe at all.
+  if (!isSelfOriginated(request, env.appUrl)) {
+    logRefusal("widget.blocked", {
+      code: "FOREIGN_ORIGIN",
+      botId: bot.id,
+      route: "feedback",
+      host: resolveRequestHost(request),
+    });
+    return err(request, "This request did not come from the chat widget.", 403, "FOREIGN_ORIGIN");
   }
 
   // `rating = -1` is half of what the Content Gaps dashboard is built from, so

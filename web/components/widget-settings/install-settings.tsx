@@ -50,8 +50,10 @@ export function InstallSettings({ botId }: { botId: string }) {
       <section>
         <h2 className="text-xs font-medium">Allowed domains</h2>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          Only pages on these domains can load the widget with this key — this is what stops anyone
-          who finds the snippet from embedding your bot on a site you do not own.
+          The hostname of the site you paste the snippet on, e.g.{" "}
+          <code>example.com</code> — not this dashboard&apos;s address. The panel refuses to open
+          anywhere else, which is what stops anyone who finds the snippet from putting your bot on a
+          site you do not own.
         </p>
         <DomainListEditor botId={botId} domains={bot.data.allowedDomains} />
       </section>
@@ -69,6 +71,8 @@ export function InstallSettings({ botId }: { botId: string }) {
         <p className="mt-2 text-sm text-[var(--muted)]">
           Trying it on your own machine? Add <code>localhost</code> and serve the page over{" "}
           <code>http://</code> — a file opened straight from disk sends no domain, so it is refused.
+          The same goes for a page that sends <code>Referrer-Policy: no-referrer</code>: the browser
+          then tells us nothing about where the widget is running, and the panel stays closed.
         </p>
       </section>
     </div>
