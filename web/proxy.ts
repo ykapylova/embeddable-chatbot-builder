@@ -6,7 +6,7 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
  * its own name because it is a request handler, not a file convention.
  *
  * Public surface of the product:
- * - marketing (`/`, `/pricing`) is readable signed out;
+ * - marketing (`/`) is readable signed out;
  * - `/embed/*` and `/api/public/*` serve the widget on customer sites, where auth
  *   is the bot public key plus an Origin check, not a Clerk session;
  * - `/api/billing/webhook` comes from Stripe and verifies its own signature;
@@ -16,7 +16,6 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
  */
 const isPublicRoute = createRouteMatcher([
   "/",
-  "/pricing",
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/embed(.*)",

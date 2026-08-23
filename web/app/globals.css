@@ -80,6 +80,15 @@
   box-sizing: border-box;
 }
 
+/*
+ * In-page nav ("How it works", "Pricing", "FAQ") points at section ids, and the
+ * marketing header is sticky 4rem tall — without the offset the heading lands
+ * underneath it.
+ */
+section[id] {
+  scroll-margin-top: 5rem;
+}
+
 html,
 body {
   margin: 0;

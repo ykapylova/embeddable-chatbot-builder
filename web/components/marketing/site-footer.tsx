@@ -13,7 +13,7 @@ export function SiteFooter() {
         </div>
 
         <nav className="flex items-center gap-5">
-          <Link href="/pricing" className="transition hover:text-[var(--foreground)]">
+          <Link href="/#pricing" className="transition hover:text-[var(--foreground)]">
             Pricing
           </Link>
           <Link href="/#faq" className="transition hover:text-[var(--foreground)]">

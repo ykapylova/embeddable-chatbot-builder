@@ -44,14 +44,23 @@ Clerk application and an OpenAI key. Stripe is only needed for the billing scree
 2. **Database → Extensions** → enable `vector` (the migration also enables it, but this is safer).
 3. **Storage → New bucket** → `knowledge-sources`, private.
 4. **Connect** (top bar) → **Session pooler** → copy the URI into `DATABASE_URL`, replacing
-   `[YOUR-PASSWORD]` with the database password.
+   `[YOUR-PASSWORD]` with the database password. For a deployed environment take the **Transaction
+   pooler** URI instead — see the note below.
 5. **Settings → API Keys** → project URL into `NEXT_PUBLIC_SUPABASE_URL`, the publishable key into
    `NEXT_PUBLIC_SUPABASE_ANON_KEY`, the secret key into `SUPABASE_SERVICE_ROLE_KEY`.
 
-Take the session pooler, not the direct connection: `db.<ref>.supabase.co` resolves over IPv6 only,
-so on an IPv4-only network it fails with no error at all — `db:migrate` simply hangs. The pooler
-host contains `pooler.supabase.com` and its user is `postgres.<ref>` rather than `postgres`. Keep
-port 5432; the transaction pooler on 6543 cannot run migrations.
+Take a pooler, not the direct connection: `db.<ref>.supabase.co` resolves over IPv6 only, so on an
+IPv4-only network it fails with no error at all — `db:migrate` simply hangs. The pooler host
+contains `pooler.supabase.com` and its user is `postgres.<ref>` rather than `postgres`.
+
+**Which pooler port depends on where the app runs.** Locally one process holds a handful of
+connections for as long as it lives, so the session pooler on **5432** is right, and it is also the
+only port `db:migrate` works over. A deployed serverless environment is the opposite case: Vercel
+freezes an instance instead of killing it, its socket outlives the request, and the session pooler
+pins one of its fifteen server connections to that socket until it dies — after a few warm
+instances every database route answers 500 with `EMAXCONNSESSION`. Deployments therefore need the
+**transaction pooler on 6543** in `DATABASE_URL`, and `MIGRATIONS_DATABASE_URL` set to the 5432 URL
+if migrations are ever run from there.
 
 Projects created after the API key rotation reject the legacy `anon` / `service_role` JWTs even
 though the dashboard still lists them, and Storage answers `JWS Protected Header is invalid`. Use
@@ -145,7 +154,7 @@ any future expiry. The plan is raised by the webhook, not by the redirect back.
 ```
 web/
 ├── app/
-│   ├── (marketing)/       # landing page, pricing
+│   ├── (marketing)/       # landing page
 │   ├── (app)/             # signed-in dashboard
 │   ├── embed/             # widget UI, served into an iframe
 │   └── api/               # HTTP boundary
