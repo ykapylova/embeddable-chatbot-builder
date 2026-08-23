@@ -2,11 +2,6 @@ import Link from "next/link";
 
 import { Button } from "components/ui/button";
 
-/* Flat, not the brand gradient: white text over the gradient's amber end is
-   effectively invisible against its own background. The gradient stays on the
-   hero's glow, where nothing has to be read on top of it. */
-const CTA_BACKGROUND = "var(--brand-cta)";
-
 export function Hero({ signedIn }: { signedIn: boolean }) {
   return (
     <section className="hero-glow relative overflow-hidden px-6 pt-16 pb-16 text-center sm:pt-20 sm:pb-20">
@@ -38,7 +33,7 @@ export function Hero({ signedIn }: { signedIn: boolean }) {
         >
           {signedIn ? (
             <Link href="/dashboard">
-              <Button size="lg" className="border-0 shadow-lg" style={{ background: CTA_BACKGROUND }}>
+              <Button size="lg" className="shadow-lg">
                 Go to dashboard
               </Button>
             </Link>
@@ -46,11 +41,7 @@ export function Hero({ signedIn }: { signedIn: boolean }) {
             <>
               <div className="flex flex-col items-center gap-3 sm:flex-row">
                 <Link href="/sign-up">
-                  <Button
-                    size="lg"
-                    className="glow-ring border-0 shadow-lg hover:opacity-95"
-                    style={{ background: CTA_BACKGROUND }}
-                  >
+                  <Button size="lg" className="glow-ring shadow-lg">
                     Build your bot free
                   </Button>
                 </Link>

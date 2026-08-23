@@ -31,11 +31,7 @@ export async function SiteHeader() {
         <div className="flex items-center gap-3">
           {userId ? (
             <Link href="/dashboard">
-              <Button
-                size="sm"
-                className="border-0"
-                style={{ background: "var(--brand-cta)" }}
-              >
+              <Button size="sm">
                 Go to dashboard
               </Button>
             </Link>
@@ -48,11 +44,7 @@ export async function SiteHeader() {
                 Sign in
               </Link>
               <Link href="/sign-up">
-                <Button
-                  size="sm"
-                  className="border-0"
-                  style={{ background: "var(--brand-cta)" }}
-                >
+                <Button size="sm">
                   Build your bot free
                 </Button>
               </Link>
