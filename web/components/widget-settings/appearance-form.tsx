@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -169,6 +169,7 @@ export function AppearanceForm({ botId }: { botId: string }) {
             placeholder="https://example.com/avatar.png"
             onChange={(event) => patch({ avatarUrl: event.target.value })}
           />
+          <AvatarCheck url={form.avatarUrl} />
         </Field>
 
         <Field label="Greeting" hint="First thing a visitor sees when the chat opens.">
@@ -248,6 +249,56 @@ export function AppearanceForm({ botId }: { botId: string }) {
           brandingEnabled: form.brandingEnabled,
         }}
       />
+    </div>
+  );
+}
+
+/**
+ * A URL that merely parses is not an image: a link to a page saves cleanly and
+ * then shows nothing in the widget. Loading it here is the only honest check —
+ * the browser either decodes it or it does not.
+ */
+function AvatarCheck({ url }: { url: string }) {
+  const trimmed = url.trim();
+  const [probed, setProbed] = useState("");
+  const [status, setStatus] = useState<"loading" | "ok" | "failed">("loading");
+
+  // Debounced so typing a URL does not fire a request per keystroke.
+  useEffect(() => {
+    if (!trimmed) return;
+    const timer = setTimeout(() => {
+      setStatus("loading");
+      setProbed(trimmed);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [trimmed]);
+
+  if (!trimmed || !probed) return null;
+
+  return (
+    <div className="mt-2 flex items-center gap-2">
+      {/* eslint-disable-next-line @next/next/no-img-element -- an arbitrary
+          owner-supplied host; see components/chat/bot-avatar.tsx. */}
+      <img
+        key={probed}
+        src={probed}
+        alt=""
+        aria-hidden
+        width={32}
+        height={32}
+        onLoad={() => setStatus("ok")}
+        onError={() => setStatus("failed")}
+        className={cn(
+          "h-8 w-8 rounded-full object-cover",
+          status === "ok" ? "" : "hidden",
+        )}
+      />
+      {status === "failed" ? (
+        <span className="text-xs text-[var(--danger)]">
+          This URL did not load as an image. Link straight to the file (.png, .jpg, .svg), not to a
+          page that shows it.
+        </span>
+      ) : null}
     </div>
   );
 }
