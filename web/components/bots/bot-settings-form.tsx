@@ -19,10 +19,12 @@ import { Input } from "components/ui/input";
 import { TagPill } from "components/ui/tag-pill";
 import { Textarea } from "components/ui/textarea";
 
+// The welcome message is deliberately absent: it is edited on the Appearance
+// screen, which writes the same column. Two controls over one value drifted
+// visibly whenever one screen saved a stale copy.
 type FormState = {
   name: string;
   tone: string;
-  welcomeMessage: string;
   fallbackMessage: string;
   systemPrompt: string;
 };
@@ -45,7 +47,6 @@ export function BotSettingsForm({ botId }: { botId: string }) {
     ? {
         name: bot.data.name,
         tone: bot.data.tone,
-        welcomeMessage: bot.data.welcomeMessage,
         fallbackMessage: bot.data.fallbackMessage,
         systemPrompt: bot.data.systemPrompt ?? "",
       }
@@ -58,7 +59,6 @@ export function BotSettingsForm({ botId }: { botId: string }) {
       updateBot(botId, {
         name: values.name.trim(),
         tone: values.tone,
-        welcomeMessage: values.welcomeMessage.trim(),
         fallbackMessage: values.fallbackMessage.trim(),
         systemPrompt: values.systemPrompt.trim() || null,
       }),
@@ -116,7 +116,6 @@ export function BotSettingsForm({ botId }: { botId: string }) {
   const isDirty =
     form.name.trim() !== base.name ||
     form.tone !== base.tone ||
-    form.welcomeMessage.trim() !== base.welcomeMessage ||
     form.fallbackMessage.trim() !== base.fallbackMessage ||
     form.systemPrompt.trim() !== base.systemPrompt;
 
@@ -124,7 +123,6 @@ export function BotSettingsForm({ botId }: { botId: string }) {
     isDirty &&
     !save.isPending &&
     form.name.trim().length > 0 &&
-    form.welcomeMessage.trim().length > 0 &&
     form.fallbackMessage.trim().length > 0;
 
   function patch(values: Partial<FormState>) {
@@ -167,14 +165,6 @@ export function BotSettingsForm({ botId }: { botId: string }) {
               </button>
             ))}
           </div>
-        </Field>
-
-        <Field label="Welcome message" hint="First thing a visitor sees in the chat.">
-          <Input
-            value={form.welcomeMessage}
-            maxLength={BOT_MESSAGE_MAX}
-            onChange={(event) => patch({ welcomeMessage: event.target.value })}
-          />
         </Field>
 
         <Field
