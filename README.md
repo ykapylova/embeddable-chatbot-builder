@@ -147,6 +147,30 @@ stripe listen --forward-to localhost:3000/api/billing/webhook
 Put the `whsec_…` it prints into `STRIPE_WEBHOOK_SECRET`, then pay with `4242 4242 4242 4242` and
 any future expiry. The plan is raised by the webhook, not by the redirect back.
 
+A deployed endpoint must send these six events — `stripe listen` forwards everything, so the gap
+only shows up in production:
+
+```
+checkout.session.completed
+customer.subscription.created
+customer.subscription.updated
+customer.subscription.deleted
+invoice.payment_succeeded
+invoice.payment_failed
+```
+
+`customer.subscription.updated` is the one worth checking twice: cancelling happens in the Billing
+Portal, and that event carries `cancel_at_period_end`. Without it the billing page keeps offering a
+renewal that is not coming. Returning from the Portal also reconciles directly against Stripe
+(`POST /api/billing/sync`), so the screen is right either way — but the webhook is what keeps it
+right for everyone who never opens the page.
+
+**The amounts in Stripe are not checked against `lib/plans.ts` at runtime.** The pricing table comes
+from the catalogue and the charge comes from the `STRIPE_PRICE_*` id, so a price created in the
+dashboard at the wrong amount advertises $29 and bills something else, silently. `npm run test:live`
+compares every configured price against the catalogue and fails on a mismatch — run it after
+creating or replacing a price.
+
 ---
 
 ## Layout
