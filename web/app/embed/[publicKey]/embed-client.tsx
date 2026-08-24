@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { ChatStreamEvent } from "lib/api-types/chat";
+import type { BubblePosition } from "lib/bot-defaults";
 import { consumeSseJsonStream } from "lib/chat-turn-stream";
 import { ChatSurface } from "components/chat/chat-surface";
 import type { ChatFeedback, ChatTheme, SendChatMessage } from "components/chat/types";
@@ -65,12 +66,14 @@ function askThroughComposer(container: HTMLElement, text: string): void {
 export function EmbedClient({
   publicKey,
   theme,
+  position,
   greeting,
   leadCaptureEnabled,
   fallbackMessage,
 }: {
   publicKey: string;
   theme: ChatTheme;
+  position: BubblePosition;
   greeting: string;
   leadCaptureEnabled: boolean;
   fallbackMessage: string;
@@ -96,6 +99,18 @@ export function EmbedClient({
     },
     [hostParams.parentOrigin],
   );
+
+  /**
+   * The launcher bubble is drawn by `widget.js` on the customer's page, which
+   * only ever reads `data-bot-key` off its own script tag — it cannot look up
+   * the bot's theme, and asking it to would mean a second request from an
+   * origin `/api/public/*` deliberately refuses. This document is the one place
+   * that already has the resolved theme, so the corner rides back out over the
+   * same `postMessage` channel as `unread` and `close`.
+   */
+  useEffect(() => {
+    postToParent({ type: "config", position });
+  }, [postToParent, position]);
 
   // Host -> iframe: visibility toggles and the `.ask()` public API.
   useEffect(() => {
