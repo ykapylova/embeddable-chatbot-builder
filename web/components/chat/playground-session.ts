@@ -100,6 +100,9 @@ export function sessionFromTranscript(
       // that was not there.
       answered: true,
       rating: message.rating,
+      // A transcript is read back by row id, so a restored answer already knows
+      // the id a rating has to name.
+      storedId: message.id,
     });
   }
 

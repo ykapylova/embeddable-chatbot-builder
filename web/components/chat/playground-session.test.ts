@@ -51,6 +51,18 @@ describe("sessionFromTranscript", () => {
     assert.equal(answer.role === "assistant" && answer.rating, "up");
   });
 
+  it("keeps the row id a rating has to name", () => {
+    const session = sessionFromTranscript("conv-1", [
+      message({ id: "1", role: "user", content: "Hi" }),
+      message({ id: "2", role: "assistant", content: "Hello" }),
+    ]);
+
+    // A live turn learns this from the stream; a restored one already knows it,
+    // and without it the thumbs would rate nothing.
+    const answer = session.messages[1];
+    assert.equal(answer.role === "assistant" && answer.storedId, "2");
+  });
+
   it("survives a transcript that opens with an answer", () => {
     const session = sessionFromTranscript("conv-1", [
       message({ id: "1", role: "assistant", content: "Orphaned reply" }),

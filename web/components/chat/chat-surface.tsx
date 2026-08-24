@@ -19,6 +19,7 @@ function freshAssistant(id: string, forQuestion: string): ChatAssistantMessage {
     citations: [],
     answered: true,
     rating: null,
+    storedId: null,
   };
 }
 
@@ -90,6 +91,7 @@ export function ChatSurface({
               status: "done",
               answered: event.answered,
               citations: event.citations,
+              storedId: event.messageId,
             }));
           } else {
             updateAssistant(assistantId, (m) => ({ ...m, status: "error", errorMessage: event.message }));
@@ -145,8 +147,17 @@ export function ChatSurface({
   }
 
   function handleRate(messageId: string, rating: "up" | "down") {
-    updateAssistant(messageId, (m) => ({ ...m, rating: m.rating === rating ? null : rating }));
-    void onFeedback?.({ messageId, rating });
+    const target = messages.find((m) => m.id === messageId);
+    if (!target || target.role !== "assistant") return;
+
+    const next = target.rating === rating ? null : rating;
+    updateAssistant(messageId, (m) => ({ ...m, rating: next }));
+
+    // The stored row is what the rating attaches to, and it is the server that
+    // names it — a turn the database never accepted has nothing to rate.
+    const conversationId = conversationIdRef.current;
+    if (!conversationId || !target.storedId) return;
+    void onFeedback?.({ conversationId, messageId: target.storedId, rating: next });
   }
 
   return (

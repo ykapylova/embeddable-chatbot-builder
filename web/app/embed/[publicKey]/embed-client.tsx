@@ -78,10 +78,8 @@ export function EmbedClient({
   const [visitorId] = useState(() => (typeof window === "undefined" ? "" : getOrCreateVisitorId()));
   const [hostParams] = useState(readHostParams);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const conversationIdRef = useRef<string | undefined>(undefined);
-  // Mirrors `conversationIdRef` — the ref is what the fetch/SSE closures read
-  // (reliable regardless of render timing), this state is what `LeadCaptureBar`
-  // renders (refs cannot be read during render).
+  // Only the lead capture bar reads this — the chat surface tracks the conversation
+  // itself and hands it back with every send and every rating.
   const [conversationId, setConversationId] = useState<string | undefined>(undefined);
   const panelVisibleRef = useRef(true);
   const [leadPrompt, setLeadPrompt] = useState<{ visible: boolean; question: string }>({
@@ -123,7 +121,6 @@ export function EmbedClient({
       try {
         await consumeSseJsonStream<ChatStreamEvent>(response, (event) => {
           if (event.type === "start") {
-            conversationIdRef.current = event.conversationId;
             setConversationId(event.conversationId);
           } else if (event.type === "done") {
             if (!panelVisibleRef.current) postToParent({ type: "unread" });
@@ -172,19 +169,17 @@ export function EmbedClient({
   );
 
   const onFeedback: ChatFeedback = useCallback(
-    ({ messageId, rating }) => {
-      const conversationId = conversationIdRef.current;
-      if (!conversationId) return;
+    ({ conversationId, messageId, rating }) => {
       void fetch("/api/public/feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ publicKey, conversationId, messageId, rating }),
+        body: JSON.stringify({ publicKey, conversationId, visitorId, messageId, rating }),
       }).catch(() => {
         // Rating is a nicety for the owner's dashboard, not something the
         // visitor needs to know failed.
       });
     },
-    [publicKey],
+    [publicKey, visitorId],
   );
 
   return (

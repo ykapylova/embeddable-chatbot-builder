@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import type { ChatCitation, ChatStreamEvent } from "lib/api-types/chat";
 import type { ModelId, PlanId } from "lib/plans";
 import { logEvent, logFailure } from "server/observability/log";
@@ -82,6 +84,7 @@ export function replayStoredTurn(conversationId: string, stored: MessageRow): Re
       if (stored.content) sse(controller, { type: "delta", text: stored.content });
       sse(controller, {
         type: "done",
+        messageId: stored.id,
         answered: stored.answerStatus === "answered",
         usage: { tokens: 0, credits: 0 },
         citations,
@@ -102,6 +105,9 @@ export function streamChatTurn(input: ChatTurnInput): ReadableStream<Uint8Array>
   return new ReadableStream<Uint8Array>({
     async start(controller) {
       const startedAt = Date.now();
+      // Minted here rather than left to the column default: the answer's row id
+      // has to travel out on the done event, which is sent before the write.
+      const messageId = randomUUID();
       let assistantText = "";
       let citations: ChatCitation[] = [];
       let keptCitations: ChatCitation[] | null = null;
@@ -146,6 +152,7 @@ export function streamChatTurn(input: ChatTurnInput): ReadableStream<Uint8Array>
           status = "answered";
           send({
             type: "done",
+            messageId,
             answered: true,
             usage: { tokens: 0, credits: 0 },
             citations: cached.citations,
@@ -184,7 +191,7 @@ export function streamChatTurn(input: ChatTurnInput): ReadableStream<Uint8Array>
           send({ type: "delta", text: assistantText });
           keptCitations = [];
           status = "quota";
-          send({ type: "done", answered: false, usage: { tokens: 0, credits: 0 }, citations: [] });
+          send({ type: "done", messageId, answered: false, usage: { tokens: 0, credits: 0 }, citations: [] });
         } else {
           for await (const event of provider.answer({
             question: input.question,
@@ -216,6 +223,7 @@ export function streamChatTurn(input: ChatTurnInput): ReadableStream<Uint8Array>
               keptCitations = usedCitations(assistantText, citations);
               send({
                 type: "done",
+                messageId,
                 answered: event.answered,
                 usage: { tokens: usage.tokens, credits: usage.credits },
                 citations: keptCitations,
@@ -279,6 +287,7 @@ export function streamChatTurn(input: ChatTurnInput): ReadableStream<Uint8Array>
             conversationId: input.conversationId,
             question: input.question,
             assistant: {
+              id: messageId,
               content: assistantText,
               citations: keptCitations ?? usedCitations(assistantText, citations),
               // Only a turn that reached a conclusion keeps its idempotency

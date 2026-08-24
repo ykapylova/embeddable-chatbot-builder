@@ -6,6 +6,7 @@ import type {
   ConversationMessage,
   ConversationTranscript,
   ConversationUsageSummary,
+  MessageRating,
 } from "lib/api-types/conversation";
 import { planLimits, type PlanId } from "lib/plans";
 import { botRepository } from "server/repositories/bot.repository";
@@ -43,9 +44,16 @@ export function startOfCurrentMonth(): string {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
 }
 
-export function toRating(value: number | null): "up" | "down" | null {
+export function toRating(value: number | null): MessageRating | null {
   if (value === 1) return "up";
   if (value === -1) return "down";
+  return null;
+}
+
+/** Inverse of toRating — the one place a thumb becomes a stored smallint. */
+export function ratingValue(rating: MessageRating | null): number | null {
+  if (rating === "up") return 1;
+  if (rating === "down") return -1;
   return null;
 }
 
@@ -139,6 +147,27 @@ export const conversationService = {
       lastMessageAt: conversation.lastMessageAt,
       messages: messages.map(toTranscriptMessage),
     };
+  },
+
+  /**
+   * The Playground's thumbs. Both scopes are re-derived here from the account
+   * rather than trusted from the request, so an id from another account's bot
+   * is indistinguishable from one that does not exist.
+   */
+  async rateMessage(
+    botId: string,
+    accountId: string,
+    conversationId: string,
+    messageId: string,
+    rating: MessageRating | null,
+  ): Promise<boolean> {
+    const bot = await botRepository.findOwned(botId, accountId);
+    if (!bot) return false;
+
+    const conversation = await conversationRepository.findOwned(conversationId, botId);
+    if (!conversation) return false;
+
+    return conversationRepository.rateMessage(conversationId, messageId, ratingValue(rating));
   },
 
   async usageSummary(

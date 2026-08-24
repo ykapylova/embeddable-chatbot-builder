@@ -185,6 +185,26 @@ export const conversationRepository = {
   },
 
   /**
+   * Scoped to the conversation as well as the message, so the ownership the
+   * caller already proved on the conversation is what authorises the write and
+   * a message id alone can never rate another bot's answer. A null rating
+   * clears it, which is what pressing the same thumb twice means.
+   */
+  async rateMessage(
+    conversationId: string,
+    messageId: string,
+    rating: number | null,
+  ): Promise<boolean> {
+    const db = getDb();
+    const rows = await db
+      .update(messagesTable)
+      .set({ rating })
+      .where(and(eq(messagesTable.id, messageId), eq(messagesTable.conversationId, conversationId)))
+      .returning({ id: messagesTable.id });
+    return rows.length > 0;
+  },
+
+  /**
    * The assistant turn already recorded for this idempotency key, if any.
    * A Retry of a turn whose stream died after the model had run finds it here
    * and replays it instead of generating — and charging — a second time.
