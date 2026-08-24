@@ -6,7 +6,7 @@ import remarkGfm from "remark-gfm";
 import { readableTextColor } from "lib/color-contrast";
 import { cn } from "lib/utils";
 import { BotAvatar } from "components/chat/bot-avatar";
-import type { ChatAssistantMessage, ChatMessage, ChatTheme } from "components/chat/types";
+import type { ChatAssistantMessage, ChatMessage, ChatTheme, ChatVariant } from "components/chat/types";
 
 const markdownComponents: Components = {
   p: ({ ...props }) => <p className="[&:not(:first-child)]:mt-2" {...props} />,
@@ -92,10 +92,12 @@ function FeedbackButtons({
 
 function AssistantBubble({
   message,
+  variant,
   onRate,
   onRetry,
 }: {
   message: ChatAssistantMessage;
+  variant: ChatVariant;
   onRate: (messageId: string, rating: "up" | "down") => void;
   onRetry: (messageId: string) => void;
 }) {
@@ -130,7 +132,7 @@ function AssistantBubble({
           </p>
         ) : null}
 
-        {message.citations.length > 0 ? (
+        {variant === "app" && message.citations.length > 0 ? (
           <ol className="mt-2 space-y-1 border-t border-[var(--border)] pt-2 text-xs text-[var(--muted)]">
             {message.citations.map((citation) => (
               <li key={citation.sourceId} className="flex items-start gap-1">
@@ -178,11 +180,13 @@ function AssistantBubble({
 function ChatMessageBubbleImpl({
   message,
   theme,
+  variant,
   onRate,
   onRetry,
 }: {
   message: ChatMessage;
   theme: ChatTheme;
+  variant: ChatVariant;
   onRate: (messageId: string, rating: "up" | "down") => void;
   onRetry: (messageId: string) => void;
 }) {
@@ -202,7 +206,7 @@ function ChatMessageBubbleImpl({
   return (
     <div className="flex justify-start gap-2">
       <BotAvatar url={theme.avatarUrl} />
-      <AssistantBubble message={message} onRate={onRate} onRetry={onRetry} />
+      <AssistantBubble message={message} variant={variant} onRate={onRate} onRetry={onRetry} />
     </div>
   );
 }
@@ -216,5 +220,6 @@ function ChatMessageBubbleImpl({
  */
 export const ChatMessageBubble = memo(
   ChatMessageBubbleImpl,
-  (prev, next) => prev.message === next.message && prev.theme === next.theme,
+  (prev, next) =>
+    prev.message === next.message && prev.theme === next.theme && prev.variant === next.variant,
 );

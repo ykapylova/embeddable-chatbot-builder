@@ -97,7 +97,7 @@ export const PLAN_CATALOGUE: PlanPresentation[] = [
     features: [
       "100 credits per month",
       "1 bot, 5 sources",
-      "Answers with source citations",
+      "Answers grounded in your docs",
       "Embed on 1 domain",
       "“Powered by” badge",
     ],

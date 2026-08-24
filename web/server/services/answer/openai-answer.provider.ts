@@ -3,7 +3,7 @@ import { getOpenAIClient } from "server/services/openai-chat.service";
 import { isAbortError, withProviderRetry } from "server/services/provider-retry";
 
 import { ANSWER_BUDGET } from "./budget";
-import { buildContextMessage, buildSystemPrompt, usedCitations } from "./prompt";
+import { buildContextMessage, buildSystemPrompt, isFallbackAnswer } from "./prompt";
 import { citationsFromChunks, type AnswerEvent, type AnswerProvider, type AnswerRequest } from "./types";
 
 export const openAiAnswerProvider: AnswerProvider = {
@@ -80,10 +80,9 @@ export const openAiAnswerProvider: AnswerProvider = {
       // "The model was called" is not the same as "the visitor got an answer".
       // The retrieval rule deliberately passes weak, tangentially-related
       // chunks so the model can be the final judge, and when it judges against
-      // them it says so in prose and cites nothing. Charging for that reads as
-      // a bug to the customer, so the citation — not the call — is what counts
-      // as an answer.
-      const grounded = usedCitations(answerText, citations).length > 0;
+      // them it returns the fallback sentence. Charging for that reads as a bug
+      // to the customer, so refusing — not the call — is what decides.
+      const grounded = !isFallbackAnswer(answerText, request.fallbackMessage);
 
       yield {
         type: "done",

@@ -1,17 +1,19 @@
 import { BotAvatar } from "components/chat/bot-avatar";
 import { ChatMessageBubble } from "components/chat/message-bubble";
-import type { ChatMessage, ChatTheme } from "components/chat/types";
+import type { ChatMessage, ChatTheme, ChatVariant } from "components/chat/types";
 import { useAutoscroll } from "components/chat/use-autoscroll";
 
 export function MessageList({
   messages,
   theme,
+  variant,
   greeting,
   onRate,
   onRetry,
 }: {
   messages: ChatMessage[];
   theme: ChatTheme;
+  variant: ChatVariant;
   greeting: string;
   onRate: (messageId: string, rating: "up" | "down") => void;
   onRetry: (messageId: string) => void;
@@ -31,7 +33,14 @@ export function MessageList({
       </div>
 
       {messages.map((message) => (
-        <ChatMessageBubble key={message.id} message={message} theme={theme} onRate={onRate} onRetry={onRetry} />
+        <ChatMessageBubble
+          key={message.id}
+          message={message}
+          theme={theme}
+          variant={variant}
+          onRate={onRate}
+          onRetry={onRetry}
+        />
       ))}
     </div>
   );

@@ -6,7 +6,6 @@ import { logEvent, logFailure } from "server/observability/log";
 import { conversationRepository, type MessageRow } from "server/repositories/conversation.repository";
 import {
   getAnswerProvider,
-  usedCitations,
   type AnswerHistoryMessage,
   type RetrievedChunk,
 } from "server/services/answer";
@@ -216,11 +215,13 @@ export function streamChatTurn(input: ChatTurnInput): ReadableStream<Uint8Array>
               answered = event.answered;
               status = event.status;
               usage = event.usage;
-              // The client showed every retrieved source while the answer was
-              // still streaming; now that the text is complete, tell it which
-              // ones the answer actually leaned on. Same list that gets stored,
-              // so the playground and the transcript cannot disagree.
-              keptCitations = usedCitations(assistantText, citations);
+              // Which sources the answer leaned on used to be read back out of
+              // its [n] markers. The model no longer writes them, so the honest
+              // statement is the one retrieval can back: a grounded answer was
+              // built from everything that was retrieved, and an abstention was
+              // built from nothing. Same list that gets stored, so the
+              // playground and the transcript cannot disagree.
+              keptCitations = event.answered ? citations : [];
               send({
                 type: "done",
                 messageId,
@@ -289,7 +290,7 @@ export function streamChatTurn(input: ChatTurnInput): ReadableStream<Uint8Array>
             assistant: {
               id: messageId,
               content: assistantText,
-              citations: keptCitations ?? usedCitations(assistantText, citations),
+              citations: keptCitations ?? (answered ? citations : []),
               // Only a turn that reached a conclusion keeps its idempotency
               // key. A turn that errored or was abandoned was refunded, so
               // Retry must generate a real answer rather than replay the

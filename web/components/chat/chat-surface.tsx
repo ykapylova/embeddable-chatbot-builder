@@ -168,7 +168,14 @@ export function ChatSurface({
         className,
       )}
     >
-      <MessageList messages={messages} theme={theme} greeting={greeting} onRate={handleRate} onRetry={handleRetry} />
+      <MessageList
+        messages={messages}
+        theme={theme}
+        variant={variant}
+        greeting={greeting}
+        onRate={handleRate}
+        onRetry={handleRetry}
+      />
       <Composer
         value={input}
         onChange={setInput}

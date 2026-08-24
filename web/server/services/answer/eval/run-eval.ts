@@ -23,7 +23,6 @@ import { accountsTable, botsTable } from "server/db/schema";
 import { chunkRepository, type RelevantChunkRow } from "server/repositories/chunk.repository";
 import { sourceRepository } from "server/repositories/source.repository";
 import { openAiAnswerProvider } from "server/services/answer/openai-answer.provider";
-import { usedCitations } from "server/services/answer/prompt";
 import { ingestSource } from "server/services/sources/ingest.service";
 import { embedTexts } from "server/services/sources/embed.service";
 
@@ -46,7 +45,6 @@ type Row = {
   top: number;
   oldKept: number;
   newKept: number;
-  cited: boolean;
   answered: boolean;
   latencyMs: number;
   tokens: number;
@@ -93,17 +91,17 @@ async function answer(question: string, chunks: RelevantChunkRow[]) {
     }
   }
 
-  return { text, cited: usedCitations(text, citations).length > 0, answered, tokens, latencyMs: Date.now() - startedAt };
+  return { text, answered, tokens, latencyMs: Date.now() - startedAt };
 }
 
 function renderTable(rows: Row[]): string {
   const header =
-    "| Q | Kind | Top | old→n | new→n | cited | ans | ms | tok |\n" +
+    "| Q | Kind | Top | old→n | new→n | ans | ms | tok |\n" +
     "| --- | --- | --- | --- | --- | --- | --- | --- | --- |";
   const body = rows
     .map((r, i) => {
       const q = r.text.length > 46 ? `${r.text.slice(0, 44)}…` : r.text;
-      return `| ${i + 1}. ${q} | ${r.kind} | ${r.top.toFixed(3)} | ${r.oldKept} | ${r.newKept} | ${r.cited ? "✅" : "—"} | ${r.answered ? "✅" : "—"} | ${r.latencyMs} | ${r.tokens} |`;
+      return `| ${i + 1}. ${q} | ${r.kind} | ${r.top.toFixed(3)} | ${r.oldKept} | ${r.newKept} | ${r.answered ? "✅" : "—"} | ${r.latencyMs} | ${r.tokens} |`;
     })
     .join("\n");
   return `${header}\n${body}`;
@@ -114,11 +112,11 @@ function summarise(rows: Row[]): string {
   const outRows = rows.filter((r) => r.kind === "out");
   const oldReachable = inRows.filter((r) => r.oldKept > 0).length;
   const newReachable = inRows.filter((r) => r.newKept > 0).length;
-  const inCited = inRows.filter((r) => r.cited).length;
-  // A fabrication is an out-of-corpus question that came back with a citation —
-  // a sourced-looking claim. Abstaining in text ("I don't know") is correct
-  // even though the provider's `answered` flag is true whenever chunks passed.
-  const fabrications = outRows.filter((r) => r.cited).length;
+  const inAnswered = inRows.filter((r) => r.answered).length;
+  // A fabrication is an out-of-corpus question the bot answered instead of
+  // refusing. `answered` is now the refusal signal itself — it is false exactly
+  // when the model returned the fallback sentence — so it is what to count.
+  const fabrications = outRows.filter((r) => r.answered).length;
   const reachedModel = outRows.filter((r) => r.newKept > 0).length;
   const answeredTokens = rows.filter((r) => r.tokens > 0).map((r) => r.tokens);
   const avgTokens = answeredTokens.length
@@ -130,7 +128,7 @@ function summarise(rows: Row[]): string {
 
   return [
     `In-corpus reachable: old ${oldReachable}/${inRows.length}, new ${newReachable}/${inRows.length}`,
-    `In-corpus answered with a citation (new): ${inCited}/${inRows.length}`,
+    `In-corpus answered rather than refused (new): ${inAnswered}/${inRows.length}`,
     `Out-of-corpus fabrications (answered with a citation, must be 0): ${fabrications}/${outRows.length}`,
     `Out-of-corpus that reached the model but abstained in text: ${reachedModel}/${outRows.length}`,
     `Avg total tokens on a model answer: ${avgTokens} (~$${estCost} upper bound per answer)`,
@@ -194,13 +192,12 @@ async function main(): Promise<void> {
         top,
         oldKept: oldKept.length,
         newKept: newKept.length,
-        cited: result.cited,
         answered: result.answered,
         latencyMs: result.latencyMs,
         tokens: result.tokens,
         answer: result.text,
       });
-      console.log(`[${q.kind}] ${top.toFixed(3)} old=${oldKept.length} new=${newKept.length} ans=${result.answered} cited=${result.cited} :: ${q.text}`);
+      console.log(`[${q.kind}] ${top.toFixed(3)} old=${oldKept.length} new=${newKept.length} ans=${result.answered} :: ${q.text}`);
       if (q.kind === "out" && result.answered) console.log(`   ⚠ OUT-OF-CORPUS ANSWERED: ${result.text}`);
     }
 
