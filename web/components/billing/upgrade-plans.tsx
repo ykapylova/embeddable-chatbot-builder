@@ -49,7 +49,7 @@ export function UpgradePlans({ reason }: { reason: UpgradeReason | null }) {
   });
 
   const portal = useMutation({
-    mutationFn: () => createPortalSession(),
+    mutationFn: (opts?: { flow?: "update" }) => createPortalSession(opts),
     onSuccess: (url) => {
       window.location.href = url;
     },
@@ -71,7 +71,7 @@ export function UpgradePlans({ reason }: { reason: UpgradeReason | null }) {
       return;
     }
     if (isSubscriber) {
-      portal.mutate();
+      portal.mutate({ flow: "update" });
       return;
     }
     setPendingPlan(planId as PaidPlanId);
@@ -194,7 +194,7 @@ export function UpgradePlans({ reason }: { reason: UpgradeReason | null }) {
             <button
               type="button"
               className="underline underline-offset-2 hover:text-[var(--foreground)]"
-              onClick={() => portal.mutate()}
+              onClick={() => portal.mutate({ flow: "update" })}
             >
               manage it from the billing portal
             </button>

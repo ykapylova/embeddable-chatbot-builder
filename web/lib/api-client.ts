@@ -244,11 +244,11 @@ export function createCheckoutSession(
  * it. The return url is marked so `/billing` knows to reconcile with Stripe on
  * arrival: the redirect itself says nothing about what the visitor did in there.
  */
-export function createPortalSession(): Promise<string> {
+export function createPortalSession(opts?: { flow?: "update" }): Promise<string> {
   return request<PortalSessionResponse>(apiPaths.billingPortal(), {
     method: "POST",
     headers: jsonHeaders,
-    body: JSON.stringify({ returnUrl: `${appPaths.billing()}?portal=1` }),
+    body: JSON.stringify({ returnUrl: `${appPaths.billing()}?portal=1`, flow: opts?.flow }),
   }).then((res) => res.url);
 }
 
