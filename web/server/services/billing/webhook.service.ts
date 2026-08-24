@@ -3,20 +3,18 @@ import type Stripe from "stripe";
 import { getDb } from "server/db/client";
 import { accountRepository } from "server/repositories/account.repository";
 import { stripeEventRepository } from "server/repositories/stripe-event.repository";
-import { subscriptionRepository, type SubscriptionPatch } from "server/repositories/subscription.repository";
-import { freeDowngradePatch } from "server/services/billing/free-downgrade";
-import { planForPriceId } from "server/services/billing/price-catalogue";
+import { subscriptionRepository } from "server/repositories/subscription.repository";
 import { getStripeClient, getStripeWebhookSecret } from "server/services/billing/stripe-client";
+import {
+  customerIdOf,
+  endedSubscriptionPatch,
+  subscriptionPatchFrom,
+} from "server/services/billing/subscription-patch";
 
 const GRACE_DAYS = 7;
 
 export function constructWebhookEvent(rawBody: string, signature: string): Stripe.Event {
   return getStripeClient().webhooks.constructEvent(rawBody, signature, getStripeWebhookSecret());
-}
-
-function customerIdOf(customer: string | Stripe.Customer | Stripe.DeletedCustomer | null): string | null {
-  if (!customer) return null;
-  return typeof customer === "string" ? customer : customer.id;
 }
 
 type Executor = Pick<ReturnType<typeof getDb>, "insert" | "select" | "update">;
@@ -60,30 +58,7 @@ async function handleSubscriptionSync(tx: Executor, subscription: Stripe.Subscri
 
   const accountId = await resolveAccountId(tx, customerId, subscription.metadata?.clerkUserId);
 
-  const patch: SubscriptionPatch = {
-    stripeCustomerId: customerId,
-    stripeSubscriptionId: subscription.id,
-    status: subscription.status,
-    cancelAtPeriodEnd: subscription.cancel_at_period_end,
-  };
-
-  // API version 2025-xx moved the billing period onto the subscription item.
-  const item = subscription.items.data[0];
-  if (item) {
-    patch.currentPeriodStart = new Date(item.current_period_start * 1000).toISOString();
-    patch.currentPeriodEnd = new Date(item.current_period_end * 1000).toISOString();
-
-    const resolved = planForPriceId(item.price.id);
-    if (resolved) {
-      patch.plan = resolved.plan;
-      patch.billingInterval = resolved.interval;
-    } else {
-      // An old price, or a subscription created by hand in the dashboard — never
-      // silently drop a paying customer to Free. PROJECT_SPEC.md §10.7.
-      console.error(`[stripe webhook] unknown price_id ${item.price.id} on ${subscription.id} — keeping current plan`);
-    }
-  }
-
+  const patch = subscriptionPatchFrom(subscription);
   await subscriptionRepository.upsert(accountId, patch, tx);
   if (patch.plan) {
     await accountRepository.updatePlan(accountId, patch.plan, tx);
@@ -98,15 +73,7 @@ async function handleSubscriptionDeleted(tx: Executor, subscription: Stripe.Subs
 
   // `stripe_customer_id` stays: it is how `resolveAccountId` and the portal
   // link still find this account, and how `/billing` knows there is history.
-  await subscriptionRepository.upsert(
-    accountId,
-    freeDowngradePatch({
-      stripeSubscriptionId: null,
-      status: subscription.status,
-      cancelAtPeriodEnd: false,
-    }),
-    tx,
-  );
+  await subscriptionRepository.upsert(accountId, endedSubscriptionPatch(subscription), tx);
   await accountRepository.updatePlan(accountId, "free", tx);
 }
 

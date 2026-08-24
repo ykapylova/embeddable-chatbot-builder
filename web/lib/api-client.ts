@@ -17,7 +17,7 @@ import type { AccountPlan } from "lib/api-types/plan";
 import type { RetrievalDebugResponse } from "lib/api-types/retrieval";
 import type { CreateJsonSourceBody, Source } from "lib/api-types/source";
 import type { BillingInterval, PlanId, PlanPresentation } from "lib/plans";
-import { apiPaths } from "./api-paths";
+import { apiPaths, appPaths } from "./api-paths";
 
 const jsonHeaders = { "Content-Type": "application/json" };
 
@@ -239,13 +239,22 @@ export function createCheckoutSession(
   }).then((res) => res.url);
 }
 
-/** Upgrade, downgrade, cancel, card changes — the Billing Portal handles all of it. */
-export function createPortalSession(): Promise<string> {
+/**
+ * Upgrade, downgrade, cancel, card changes — the Billing Portal handles all of
+ * it. The return url is marked so `/billing` knows to reconcile with Stripe on
+ * arrival: the redirect itself says nothing about what the visitor did in there.
+ */
+export function createPortalSession(opts?: { flow?: "update" }): Promise<string> {
   return request<PortalSessionResponse>(apiPaths.billingPortal(), {
     method: "POST",
     headers: jsonHeaders,
-    body: JSON.stringify({}),
+    body: JSON.stringify({ returnUrl: `${appPaths.billing()}?portal=1`, flow: opts?.flow }),
   }).then((res) => res.url);
+}
+
+/** Pulls the account's subscription state back from Stripe. Safe to call repeatedly. */
+export function syncBilling(): Promise<void> {
+  return requestAck(apiPaths.billingSync(), { method: "POST" });
 }
 
 /**

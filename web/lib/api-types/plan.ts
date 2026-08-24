@@ -44,6 +44,12 @@ export type AccountPlan = PlanUsage & {
   billing: {
     /** False for an account that has never gone through Stripe checkout — hides the Portal button. */
     hasBillingHistory: boolean;
+    /**
+     * True while Stripe still holds a subscription for this account. Checkout
+     * refuses these accounts, so a plan change has to go to the Portal — the
+     * two buttons must branch on the same fact the server refuses on.
+     */
+    hasLiveSubscription: boolean;
     interval: BillingInterval | null;
     /** Date (YYYY-MM-DD) the current period ends, or `null` on Free. */
     renewsOn: string | null;

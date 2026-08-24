@@ -18,6 +18,7 @@ export const apiPaths = {
   plans: () => "/api/plans",
   billingCheckout: () => "/api/billing/checkout",
   billingPortal: () => "/api/billing/portal",
+  billingSync: () => "/api/billing/sync",
   billingSessionStatus: (sessionId: string) =>
     `/api/billing/session-status?sessionId=${encodeURIComponent(sessionId)}`,
 } as const;

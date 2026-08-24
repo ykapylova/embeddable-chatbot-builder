@@ -6,6 +6,7 @@ import { CancelSubscriptionScreen } from "components/billing/cancel-subscription
 import { CheckoutCancelled, CheckoutReturn } from "components/billing/checkout-return";
 import { ManageSubscription } from "components/billing/manage-subscription";
 import { PlanSummary } from "components/billing/plan-summary";
+import { PortalReturn } from "components/billing/portal-return";
 import { UpgradePlans } from "components/billing/upgrade-plans";
 import { parseUpgradeReason } from "components/billing/upgrade-reason";
 
@@ -39,6 +40,7 @@ export function BillingPage() {
 
       {status === "success" && sessionId ? <CheckoutReturn sessionId={sessionId} /> : null}
       {status === "cancelled" ? <CheckoutCancelled /> : null}
+      {searchParams.get("portal") ? <PortalReturn /> : null}
 
       <div className="space-y-6">
         <PlanSummary />

@@ -6,26 +6,13 @@ import { subscriptionRepository } from "server/repositories/subscription.reposit
 import { resolvePriceId } from "server/services/billing/price-catalogue";
 import { safeReturnUrl } from "server/services/billing/return-url";
 import { getStripeClient } from "server/services/billing/stripe-client";
+import { hasLiveSubscription } from "server/services/billing/subscription-status";
 
 export const createCheckoutSchema = z.object({
   plan: z.enum(["pro", "business"]),
   interval: z.enum(["month", "year"]),
   returnUrl: z.string().trim().max(2048).optional(),
 });
-
-/**
- * Statuses under which a Stripe subscription is still "live" — mirrors the
- * set the source document uses to decide when a customer already has a
- * subscription to manage, rather than a new one to create.
- */
-const LIVE_SUBSCRIPTION_STATUSES = new Set([
-  "active",
-  "trialing",
-  "past_due",
-  "unpaid",
-  "incomplete",
-  "paused",
-]);
 
 /**
  * True when Stripe is telling us the customer id we sent does not exist — it was
@@ -56,7 +43,7 @@ export async function createCheckoutSession(account: AccountRow, input: unknown)
   const { plan, interval, returnUrl } = createCheckoutSchema.parse(input);
 
   const existing = await subscriptionRepository.findByAccount(account.id);
-  if (existing?.status && LIVE_SUBSCRIPTION_STATUSES.has(existing.status)) {
+  if (hasLiveSubscription(existing)) {
     throw new ExistingSubscriberError();
   }
 

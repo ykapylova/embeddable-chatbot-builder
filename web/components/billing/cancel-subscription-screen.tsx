@@ -17,7 +17,7 @@ import { Card } from "components/ui/card";
  * exactly what is lost before handing the user off. PROJECT_SPEC.md §10.6.
  */
 export function CancelSubscriptionScreen() {
-  const { plan, isPlanResolved } = usePlan();
+  const { plan, isPlanResolved, error, refetch } = usePlan();
 
   const portal = useMutation({
     mutationFn: () => createPortalSession(),
@@ -26,8 +26,27 @@ export function CancelSubscriptionScreen() {
     },
   });
 
+  // The back link lives outside the branches: a failed plan load used to return
+  // a bare skeleton, leaving this screen with no controls and no way off it.
+  if (error) {
+    return (
+      <Shell>
+        <Card className="border border-[var(--border)] text-center">
+          <p className="text-sm text-[var(--danger)]">{error}</p>
+          <Button variant="outline" className="mt-3" onClick={() => refetch()}>
+            Try again
+          </Button>
+        </Card>
+      </Shell>
+    );
+  }
+
   if (!isPlanResolved || !plan) {
-    return <div className="h-56 animate-pulse rounded-3xl bg-[var(--panel-soft)]" aria-hidden />;
+    return (
+      <Shell>
+        <div className="h-56 animate-pulse rounded-3xl bg-[var(--panel-soft)]" aria-hidden />
+      </Shell>
+    );
   }
 
   const free = planLimits("free");
@@ -62,15 +81,7 @@ export function CancelSubscriptionScreen() {
   }
 
   return (
-    <div className="mx-auto max-w-lg">
-      <Link
-        href={appPaths.billing()}
-        className="mb-4 inline-flex items-center gap-1.5 text-sm text-[var(--muted)] hover:text-[var(--foreground)]"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" />
-        Back to billing
-      </Link>
-
+    <Shell>
       <Card className="border border-[var(--border)]">
         <h1 className="text-lg font-semibold">Cancel your subscription?</h1>
         <p className="mt-1 text-sm text-[var(--muted)]">
@@ -106,6 +117,21 @@ export function CancelSubscriptionScreen() {
           </p>
         ) : null}
       </Card>
+    </Shell>
+  );
+}
+
+function Shell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mx-auto max-w-lg">
+      <Link
+        href={appPaths.billing()}
+        className="mb-4 inline-flex items-center gap-1.5 text-sm text-[var(--muted)] hover:text-[var(--foreground)]"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" />
+        Back to billing
+      </Link>
+      {children}
     </div>
   );
 }
