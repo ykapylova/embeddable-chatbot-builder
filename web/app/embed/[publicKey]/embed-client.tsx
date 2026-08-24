@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { ChatStreamEvent } from "lib/api-types/chat";
-import type { BubblePosition } from "lib/bot-defaults";
 import { consumeSseJsonStream } from "lib/chat-turn-stream";
 import { ChatSurface } from "components/chat/chat-surface";
 import type { ChatFeedback, ChatTheme, SendChatMessage } from "components/chat/types";
@@ -66,14 +65,12 @@ function askThroughComposer(container: HTMLElement, text: string): void {
 export function EmbedClient({
   publicKey,
   theme,
-  position,
   greeting,
   leadCaptureEnabled,
   fallbackMessage,
 }: {
   publicKey: string;
   theme: ChatTheme;
-  position: BubblePosition;
   greeting: string;
   leadCaptureEnabled: boolean;
   fallbackMessage: string;
@@ -81,10 +78,8 @@ export function EmbedClient({
   const [visitorId] = useState(() => (typeof window === "undefined" ? "" : getOrCreateVisitorId()));
   const [hostParams] = useState(readHostParams);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const conversationIdRef = useRef<string | undefined>(undefined);
-  // Mirrors `conversationIdRef` — the ref is what the fetch/SSE closures read
-  // (reliable regardless of render timing), this state is what `LeadCaptureBar`
-  // renders (refs cannot be read during render).
+  // Only the lead capture bar reads this — the chat surface tracks the conversation
+  // itself and hands it back with every send and every rating.
   const [conversationId, setConversationId] = useState<string | undefined>(undefined);
   const panelVisibleRef = useRef(true);
   const [leadPrompt, setLeadPrompt] = useState<{ visible: boolean; question: string }>({
@@ -99,18 +94,6 @@ export function EmbedClient({
     },
     [hostParams.parentOrigin],
   );
-
-  /**
-   * The launcher bubble is drawn by `widget.js` on the customer's page, which
-   * only ever reads `data-bot-key` off its own script tag — it cannot look up
-   * the bot's theme, and asking it to would mean a second request from an
-   * origin `/api/public/*` deliberately refuses. This document is the one place
-   * that already has the resolved theme, so the corner rides back out over the
-   * same `postMessage` channel as `unread` and `close`.
-   */
-  useEffect(() => {
-    postToParent({ type: "config", position });
-  }, [postToParent, position]);
 
   // Host -> iframe: visibility toggles and the `.ask()` public API.
   useEffect(() => {
@@ -138,7 +121,6 @@ export function EmbedClient({
       try {
         await consumeSseJsonStream<ChatStreamEvent>(response, (event) => {
           if (event.type === "start") {
-            conversationIdRef.current = event.conversationId;
             setConversationId(event.conversationId);
           } else if (event.type === "done") {
             if (!panelVisibleRef.current) postToParent({ type: "unread" });
@@ -187,19 +169,17 @@ export function EmbedClient({
   );
 
   const onFeedback: ChatFeedback = useCallback(
-    ({ messageId, rating }) => {
-      const conversationId = conversationIdRef.current;
-      if (!conversationId) return;
+    ({ conversationId, messageId, rating }) => {
       void fetch("/api/public/feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ publicKey, conversationId, messageId, rating }),
+        body: JSON.stringify({ publicKey, conversationId, visitorId, messageId, rating }),
       }).catch(() => {
         // Rating is a nicety for the owner's dashboard, not something the
         // visitor needs to know failed.
       });
     },
-    [publicKey],
+    [publicKey, visitorId],
   );
 
   return (

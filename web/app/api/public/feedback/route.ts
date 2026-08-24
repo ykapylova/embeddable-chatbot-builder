@@ -5,8 +5,8 @@ import { logRefusal } from "server/observability/log";
 import { jsonAck, jsonErr } from "server/http/json-api";
 import { botRepository } from "server/repositories/bot.repository";
 import { conversationRepository } from "server/repositories/conversation.repository";
+import { ratingValue } from "server/services/conversation.service";
 import { corsPreflight, withCors } from "server/services/widget/cors";
-import { rateMessage } from "server/services/widget/message-rating";
 import { isSelfOriginated, resolveRequestHost } from "server/services/widget/origin";
 import { checkRateLimit } from "server/services/widget/rate-limit";
 import { resolveRequestIp } from "server/services/widget/request-ip";
@@ -16,8 +16,9 @@ export const runtime = "nodejs";
 const feedbackSchema = z.object({
   publicKey: z.string().trim().min(1, "publicKey is required"),
   conversationId: z.string().uuid(),
+  visitorId: z.string().trim().min(1, "visitorId is required").max(128),
   messageId: z.string().uuid(),
-  rating: z.enum(["up", "down"]),
+  rating: z.enum(["up", "down"]).nullable(),
 });
 
 function err(request: Request, message: string, status: number, code?: string): Response {
@@ -82,9 +83,19 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const conversation = await conversationRepository.findOwned(payload.conversationId, bot.id);
-  if (!conversation) return err(request, "Conversation not found", 404);
+  // Same rule the chat route applies: the conversation id is an unguessable
+  // UUID, but a visitor who obtained someone else's must not be able to rate
+  // that transcript — and, since a null rating clears one, erase the owner's
+  // evidence of a bad answer.
+  if (!conversation || (conversation.visitorId && conversation.visitorId !== payload.visitorId)) {
+    return err(request, "Conversation not found", 404);
+  }
 
-  const updated = await rateMessage(payload.conversationId, payload.messageId, payload.rating);
+  const updated = await conversationRepository.rateMessage(
+    payload.conversationId,
+    payload.messageId,
+    ratingValue(payload.rating),
+  );
   if (!updated) return err(request, "Message not found", 404);
 
   return withCors(request, jsonAck());

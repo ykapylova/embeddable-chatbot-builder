@@ -1,5 +1,5 @@
 import type { ChatTheme } from "components/chat/types";
-import { THEME_DEFAULTS, type BubblePosition } from "lib/bot-defaults";
+import { THEME_DEFAULTS } from "lib/bot-defaults";
 
 /**
  * `bots.theme` is untyped JSON and is still `{}` for every bot created before
@@ -23,18 +23,4 @@ export function resolveWidgetTheme(rawTheme: unknown, brandingEnabled: boolean):
     placeholder: typeof theme.placeholder === "string" ? theme.placeholder : THEME_DEFAULTS.placeholder,
     brandingEnabled,
   };
-}
-
-/**
- * Read apart from `resolveWidgetTheme` because it is not part of what
- * ChatSurface paints: the corner positions the launcher on the customer's page,
- * which only `widget.js` can act on. The appearance form draws the same
- * separation — `theme` for the panel, `position` alongside it.
- */
-export function resolveBubblePosition(rawTheme: unknown): BubblePosition {
-  const theme = isRecord(rawTheme) ? rawTheme : {};
-
-  return theme.position === "bottom-left" || theme.position === "bottom-right"
-    ? theme.position
-    : THEME_DEFAULTS.position;
 }

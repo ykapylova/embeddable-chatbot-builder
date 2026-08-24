@@ -3,6 +3,8 @@
  * carry a bot `publicKey` instead of a session — see PROJECT_SPEC.md §9.
  */
 
+import type { MessageRating } from "lib/api-types/conversation";
+
 export type PublicChatTurnRequest = {
   publicKey: string;
   /** Omit to start a new conversation. */
@@ -19,8 +21,11 @@ export type PublicChatTurnRequest = {
 export type PublicFeedbackRequest = {
   publicKey: string;
   conversationId: string;
+  visitorId: string;
+  /** The stored answer's row id, which the chat stream reports on its done event. */
   messageId: string;
-  rating: "up" | "down";
+  /** null clears the rating, which is what a thumb pressed twice means. */
+  rating: MessageRating | null;
 };
 
 export type PublicLeadRequest = {

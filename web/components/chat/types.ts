@@ -32,6 +32,10 @@ export type ChatAssistantMessage = {
   answered: boolean;
   errorMessage?: string;
   rating: "up" | "down" | null;
+  // Row id of this answer on the server, which the id above is not: that one is
+  // the turn's idempotency key, minted here. Null until the stream reports it,
+  // and for a turn the database never stored — a rating has nothing to attach to.
+  storedId: string | null;
 };
 
 export type ChatMessage = ChatUserMessage | ChatAssistantMessage;
@@ -62,8 +66,11 @@ export type SendChatMessage = (params: {
 }) => Promise<Response>;
 
 export type ChatFeedback = (params: {
+  conversationId: string;
+  /** The stored answer's row id, not the message's client-side id. */
   messageId: string;
-  rating: "up" | "down";
+  /** null when the same thumb is pressed twice, which clears the rating. */
+  rating: "up" | "down" | null;
 }) => void | Promise<void>;
 
 export type ChatSurfaceProps = {

@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { logRefusal } from "server/observability/log";
 import { botRepository } from "server/repositories/bot.repository";
 import { checkEmbedAccess } from "server/services/widget/origin";
-import { resolveBubblePosition, resolveWidgetTheme } from "server/services/widget/theme";
+import { resolveWidgetTheme } from "server/services/widget/theme";
 import { EmbedClient } from "./embed-client";
 
 export const metadata: Metadata = {
@@ -75,7 +75,6 @@ export default async function EmbedPage({ params }: PageProps) {
       <EmbedClient
         publicKey={bot.publicKey}
         theme={theme}
-        position={resolveBubblePosition(bot.theme)}
         greeting={bot.welcomeMessage}
         leadCaptureEnabled={bot.leadCaptureEnabled}
         fallbackMessage={bot.fallbackMessage}

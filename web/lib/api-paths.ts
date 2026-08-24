@@ -11,6 +11,8 @@ export const apiPaths = {
   conversationsUsage: (botId: string) => `/api/bots/${botId}/conversations/usage`,
   conversation: (botId: string, conversationId: string) =>
     `/api/bots/${botId}/conversations/${conversationId}`,
+  conversationRating: (botId: string, conversationId: string) =>
+    `/api/bots/${botId}/conversations/${conversationId}/rating`,
   gaps: (botId: string) => `/api/bots/${botId}/gaps`,
   leads: (botId: string) => `/api/bots/${botId}/leads`,
   leadsExport: (botId: string) => `/api/bots/${botId}/leads/export`,

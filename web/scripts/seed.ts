@@ -158,7 +158,7 @@ type BotSpec = {
   fallbackMessage: string;
   systemPrompt: string;
   tone: string;
-  theme: { accentColor: string; placeholder: string; position: "bottom-right" | "bottom-left" };
+  theme: { accentColor: string; placeholder: string };
   allowedDomains: readonly string[];
   leadCapture: boolean;
 };

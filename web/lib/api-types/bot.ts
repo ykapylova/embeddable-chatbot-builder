@@ -2,7 +2,6 @@ export type BotTheme = {
   accentColor?: string;
   avatarUrl?: string | null;
   placeholder?: string;
-  position?: "bottom-right" | "bottom-left";
 };
 
 export type Bot = {

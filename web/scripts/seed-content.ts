@@ -18,7 +18,6 @@ export const DEMO_BOT = {
   theme: {
     accentColor: "#0f766e",
     placeholder: "Ask about orders, subscriptions or brewing…",
-    position: "bottom-right" as const,
   },
   allowedDomains: ["harborcoffee.example"],
 } as const;
@@ -203,7 +202,6 @@ export const DOCSY_BOT = {
   theme: {
     accentColor: "#e11d63",
     placeholder: "Ask about pricing, setup or the widget…",
-    position: "bottom-right" as const,
   },
 } as const;
 

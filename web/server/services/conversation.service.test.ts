@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { decodeCursor, encodeCursor, toRating } from "./conversation.service";
+import { decodeCursor, encodeCursor, ratingValue, toRating } from "./conversation.service";
 
 describe("encodeCursor / decodeCursor", () => {
   it("round-trips lastMessageAt and id", () => {
@@ -25,5 +25,24 @@ describe("toRating", () => {
     assert.equal(toRating(-1), "down");
     assert.equal(toRating(null), null);
     assert.equal(toRating(0), null);
+  });
+});
+
+describe("ratingValue", () => {
+  // The conversation list's down-rated filter matches `rating = -1` in SQL, so
+  // a thumb that maps to anything else is a rating the dashboard never finds.
+  it("maps a thumb to the smallint the down-rated filter looks for", () => {
+    assert.equal(ratingValue("down"), -1);
+    assert.equal(ratingValue("up"), 1);
+  });
+
+  it("clears the rating for null, so an un-pressed thumb stops matching", () => {
+    assert.equal(ratingValue(null), null);
+  });
+
+  it("round-trips through toRating", () => {
+    for (const rating of ["up", "down", null] as const) {
+      assert.equal(toRating(ratingValue(rating)), rating);
+    }
   });
 });

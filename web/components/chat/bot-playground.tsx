@@ -3,8 +3,9 @@
 import { useCallback, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Bug, RotateCcw } from "lucide-react";
+import { toast } from "sonner";
 
-import { getBot, postChatTurn } from "lib/api-client";
+import { getBot, postChatTurn, rateConversationMessage } from "lib/api-client";
 import { THEME_DEFAULTS } from "lib/bot-defaults";
 import { queryKeys } from "lib/query-keys";
 import { ChatSurface } from "components/chat/chat-surface";
@@ -13,7 +14,7 @@ import {
   readPlaygroundSession,
   writePlaygroundSession,
 } from "components/chat/playground-session";
-import type { ChatSession } from "components/chat/types";
+import type { ChatFeedback, ChatSession } from "components/chat/types";
 import { RetrievalDebugPanel } from "components/retrieval/retrieval-debug-panel";
 import { Button } from "components/ui/button";
 
@@ -39,6 +40,24 @@ export function BotPlayground({ botId }: { botId: string }) {
 
   const persistSession = useCallback(
     (next: ChatSession) => writePlaygroundSession(botId, next),
+    [botId],
+  );
+
+  /**
+   * Without this the Playground's thumbs were a local highlight and nothing
+   * else: the rating never reached the database, so the Conversations screen's
+   * down-rated filter never saw it and reopening the conversation lost it.
+   */
+  const rateMessage: ChatFeedback = useCallback(
+    async ({ conversationId, messageId, rating }) => {
+      try {
+        await rateConversationMessage(botId, conversationId, { messageId, rating });
+      } catch {
+        // The thumb is already lit optimistically, so silence would leave the
+        // owner believing a rating the dashboard will never show.
+        toast.error("Could not save this rating.");
+      }
+    },
     [botId],
   );
 
@@ -96,6 +115,7 @@ export function BotPlayground({ botId }: { botId: string }) {
             greeting={bot.data.welcomeMessage}
             initialSession={session ?? undefined}
             onSessionChange={persistSession}
+            onFeedback={rateMessage}
             sendMessage={({ message, conversationId, requestId, signal }) =>
               postChatTurn(botId, { message, conversationId, requestId }, signal)
             }

@@ -3,6 +3,8 @@ import type { PlanId } from "lib/plans";
 
 export type ConversationChannel = "app" | "widget";
 
+export type MessageRating = "up" | "down";
+
 export type ConversationListFilter = {
   channel?: ConversationChannel;
   ratedDown?: boolean;
@@ -36,8 +38,14 @@ export type ConversationMessage = {
   role: "user" | "assistant";
   content: string;
   citations: ChatCitation[];
-  rating: "up" | "down" | null;
+  rating: MessageRating | null;
   createdAt: string;
+};
+
+export type MessageRatingBody = {
+  messageId: string;
+  /** null clears the rating, so a thumb pressed twice also stops matching the filter. */
+  rating: MessageRating | null;
 };
 
 export type ConversationTranscript = {

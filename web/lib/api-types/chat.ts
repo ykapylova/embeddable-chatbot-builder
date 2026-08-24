@@ -34,5 +34,14 @@ export type ChatStreamEvent =
    * `start` carries every retrieved source so citations can be shown while the
    * answer streams; `done` narrows that to the ones the finished answer cited.
    */
-  | { type: "done"; answered: boolean; usage: ChatUsage; citations: ChatCitation[] }
+  | {
+      type: "done";
+      // Row id of the answer as it was stored. The client only ever mints the
+      // turn's idempotency key, so without this it cannot name the message it
+      // is rating and every rating lands on a row that does not exist.
+      messageId: string;
+      answered: boolean;
+      usage: ChatUsage;
+      citations: ChatCitation[];
+    }
   | { type: "error"; code: string; message: string };

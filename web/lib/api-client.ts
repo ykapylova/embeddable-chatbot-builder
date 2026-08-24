@@ -10,6 +10,7 @@ import type {
   ConversationListResponse,
   ConversationTranscript,
   ConversationUsageSummary,
+  MessageRatingBody,
 } from "lib/api-types/conversation";
 import type { GapsResponse } from "lib/api-types/gaps";
 import type { LeadListResponse } from "lib/api-types/leads";
@@ -170,6 +171,19 @@ export function getConversationTranscript(
   conversationId: string,
 ): Promise<ConversationTranscript> {
   return request<ConversationTranscript>(apiPaths.conversation(botId, conversationId));
+}
+
+/** The Playground's thumbs. The widget posts the same rating to the public feedback route. */
+export function rateConversationMessage(
+  botId: string,
+  conversationId: string,
+  body: MessageRatingBody,
+): Promise<void> {
+  return requestAck(apiPaths.conversationRating(botId, conversationId), {
+    method: "POST",
+    headers: jsonHeaders,
+    body: JSON.stringify(body),
+  });
 }
 
 export function getGaps(botId: string): Promise<GapsResponse> {
