@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-
 import { getBot, updateBot } from "lib/api-client";
 import { appPaths } from "lib/api-paths";
 import { BOT_MESSAGE_MAX, THEME_DEFAULTS, THEME_PLACEHOLDER_MAX } from "lib/bot-defaults";
