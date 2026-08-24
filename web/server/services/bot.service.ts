@@ -44,7 +44,6 @@ const themeSchema = z
       .optional(),
     avatarUrl: z.string().trim().url("Avatar must be a valid URL").max(2048).nullable().optional(),
     placeholder: z.string().trim().max(THEME_PLACEHOLDER_MAX).optional(),
-    position: z.enum(["bottom-right", "bottom-left"]).optional(),
   })
   .strict();
 
@@ -113,9 +112,6 @@ function toBotTheme(raw: unknown): Bot["theme"] {
     result.avatarUrl = theme.avatarUrl as string | null;
   }
   if (typeof theme.placeholder === "string") result.placeholder = theme.placeholder;
-  if (theme.position === "bottom-right" || theme.position === "bottom-left") {
-    result.position = theme.position;
-  }
 
   return result;
 }

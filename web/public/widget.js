@@ -33,22 +33,13 @@
 
   var EDGE_GAP = "20px";
 
-  // The corner is configured in the bot's Appearance screen, which lives in the
-  // theme only the iframe document is served. Until it reports back we draw in
-  // the default corner: delaying the bubble on every page load to spare the one
-  // configured the other way would be the worse trade.
   var state = {
     open: false,
     mode: "panel",
-    position: "bottom-right",
     iframe: null,
     panelHost: null,
     pendingAsk: null,
   };
-
-  function isLeftSide() {
-    return state.position === "bottom-left";
-  }
 
   function postToIframe(message) {
     if (state.iframe && state.iframe.contentWindow) {
@@ -87,10 +78,10 @@
     } else {
       host.style.top = "";
       host.style.bottom = "92px";
-      // Both sides are written every time: fullscreen pins all four edges, so a
-      // panel that set only its own side would stay stretched to the other one.
-      host.style.left = isLeftSide() ? EDGE_GAP : "";
-      host.style.right = isLeftSide() ? "" : EDGE_GAP;
+      // `left` is cleared explicitly: fullscreen pins all four edges, so a panel
+      // that set only `right` would stay stretched across the viewport.
+      host.style.left = "";
+      host.style.right = EDGE_GAP;
       host.style.width = "380px";
       host.style.height = "min(600px, 80vh)";
     }
@@ -151,21 +142,6 @@
     badge.style.display = value ? "block" : "none";
   }
 
-  function applyBubblePosition() {
-    bubbleHost.style.left = isLeftSide() ? EDGE_GAP : "";
-    bubbleHost.style.right = isLeftSide() ? "" : EDGE_GAP;
-  }
-
-  // Anything other than the two known corners is ignored rather than written
-  // through: these values land straight in `left`/`right`.
-  function setPosition(value) {
-    if (value !== "bottom-left" && value !== "bottom-right") return;
-    if (value === state.position) return;
-    state.position = value;
-    applyBubblePosition();
-    applyPanelGeometry();
-  }
-
   function open() {
     if (state.open) return;
     state.open = true;
@@ -218,6 +194,7 @@
   bubbleHost.style.position = "fixed";
   bubbleHost.style.zIndex = "2147483000";
   bubbleHost.style.bottom = EDGE_GAP;
+  bubbleHost.style.right = EDGE_GAP;
 
   var shadow = bubbleHost.attachShadow({ mode: "open" });
   var wrap = document.createElement("div");
@@ -294,7 +271,6 @@
   wrap.appendChild(badge);
   shadow.appendChild(wrap);
   setBubbleIcon();
-  applyBubblePosition();
 
   // ---- iframe -> host messages, only ever accepted from our own iframe. ----
   window.addEventListener("message", function (event) {
@@ -304,9 +280,7 @@
     var data = event.data;
     if (!data || typeof data.type !== "string") return;
 
-    if (data.type === "config") {
-      setPosition(data.position);
-    } else if (data.type === "unread") {
+    if (data.type === "unread") {
       if (!state.open) setUnread(true);
     } else if (data.type === "close") {
       close();

@@ -7,12 +7,7 @@ import { toast } from "sonner";
 
 import { getBot, updateBot } from "lib/api-client";
 import { appPaths } from "lib/api-paths";
-import {
-  BOT_MESSAGE_MAX,
-  THEME_DEFAULTS,
-  THEME_PLACEHOLDER_MAX,
-  type BubblePosition,
-} from "lib/bot-defaults";
+import { BOT_MESSAGE_MAX, THEME_DEFAULTS, THEME_PLACEHOLDER_MAX } from "lib/bot-defaults";
 import { queryKeys } from "lib/query-keys";
 import { cn } from "lib/utils";
 import { usePlan } from "components/plan/use-plan";
@@ -25,7 +20,6 @@ type FormState = {
   accentColor: string;
   avatarUrl: string;
   placeholder: string;
-  position: BubblePosition;
   greeting: string;
   brandingEnabled: boolean;
 };
@@ -46,7 +40,6 @@ export function AppearanceForm({ botId }: { botId: string }) {
         accentColor: bot.data.theme.accentColor ?? THEME_DEFAULTS.accentColor,
         avatarUrl: bot.data.theme.avatarUrl ?? "",
         placeholder: bot.data.theme.placeholder ?? THEME_DEFAULTS.placeholder,
-        position: bot.data.theme.position ?? THEME_DEFAULTS.position,
         greeting: bot.data.welcomeMessage,
         brandingEnabled: bot.data.brandingEnabled,
       }
@@ -61,7 +54,6 @@ export function AppearanceForm({ botId }: { botId: string }) {
           accentColor: values.accentColor,
           avatarUrl: values.avatarUrl.trim() || null,
           placeholder: values.placeholder.trim(),
-          position: values.position,
         },
         welcomeMessage: values.greeting.trim(),
         brandingEnabled: values.brandingEnabled,
@@ -107,7 +99,6 @@ export function AppearanceForm({ botId }: { botId: string }) {
     form.accentColor !== base.accentColor ||
     form.avatarUrl.trim() !== base.avatarUrl ||
     form.placeholder.trim() !== base.placeholder ||
-    form.position !== base.position ||
     form.greeting.trim() !== base.greeting ||
     form.brandingEnabled !== base.brandingEnabled;
 
@@ -220,7 +211,6 @@ export function AppearanceForm({ botId }: { botId: string }) {
 
       <AppearancePreview
         botId={botId}
-        position={form.position}
         greeting={form.greeting || base.greeting}
         theme={{
           accentColor: form.accentColor,
