@@ -3,6 +3,7 @@ import type { NextResponse } from "next/server";
 import { requireAccount, unwrapAccount } from "server/auth/require-account";
 import { jsonOk } from "server/http/json-api";
 import { subscriptionRepository } from "server/repositories/subscription.repository";
+import { hasLiveSubscription } from "server/services/billing/subscription-status";
 import { getPlanUsage } from "server/services/plan.service";
 
 export const runtime = "nodejs";
@@ -30,6 +31,7 @@ export async function GET(): Promise<NextResponse> {
     ...usage,
     billing: {
       hasBillingHistory: Boolean(subscription?.stripeCustomerId),
+      hasLiveSubscription: hasLiveSubscription(subscription),
       interval: subscription?.billingInterval ?? null,
       renewsOn: subscription?.currentPeriodEnd ? subscription.currentPeriodEnd.slice(0, 10) : null,
       cancelAtPeriodEnd: subscription?.cancelAtPeriodEnd ?? false,

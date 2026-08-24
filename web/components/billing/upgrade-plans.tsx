@@ -40,6 +40,12 @@ export function UpgradePlans({ reason }: { reason: UpgradeReason | null }) {
     onSuccess: (url) => {
       window.location.href = url;
     },
+    onError: (error) => {
+      // The 409 has its own explanation below the cards; anything else would
+      // otherwise fail with the button quietly flipping back to "Upgrade".
+      if (error instanceof ApiError && error.status === 409) return;
+      toast.error(error instanceof Error ? error.message : "Could not start checkout");
+    },
   });
 
   const portal = useMutation({
@@ -52,10 +58,20 @@ export function UpgradePlans({ reason }: { reason: UpgradeReason | null }) {
     },
   });
 
+  // Checkout is first purchase only — an account Stripe still holds a
+  // subscription for can only change plan through the Portal, which is also
+  // the only thing that can prorate the switch. Sending it to Checkout is what
+  // produced a 409 the visitor could not act on.
+  const isSubscriber = currentPlan?.billing.hasLiveSubscription ?? false;
+
   function handleSelect(planId: PlanId) {
     if (planId === currentPlan?.plan) return;
     if (planId === "free") {
       router.push(`${appPaths.billing()}?view=cancel`);
+      return;
+    }
+    if (isSubscriber) {
+      portal.mutate();
       return;
     }
     setPendingPlan(planId as PaidPlanId);
@@ -108,6 +124,9 @@ export function UpgradePlans({ reason }: { reason: UpgradeReason | null }) {
             const isCurrent = currentPlan?.plan === p.id;
             const isFree = p.id === "free";
             const saving = yearlySavingPercent(p);
+            const isRedirecting = isSubscriber
+              ? portal.isPending
+              : checkout.isPending && pendingPlan === p.id;
 
             return (
               <Card
@@ -149,16 +168,18 @@ export function UpgradePlans({ reason }: { reason: UpgradeReason | null }) {
                 <Button
                   className="mt-4"
                   variant={isCurrent ? "outline" : "default"}
-                  disabled={isCurrent || (checkout.isPending && pendingPlan === p.id)}
+                  disabled={isCurrent || isRedirecting}
                   onClick={() => handleSelect(p.id)}
                 >
                   {isCurrent
                     ? "Current plan"
                     : isFree
                       ? "Downgrade"
-                      : checkout.isPending && pendingPlan === p.id
+                      : isRedirecting
                         ? "Redirecting…"
-                        : "Upgrade"}
+                        : isSubscriber
+                          ? "Change plan"
+                          : "Upgrade"}
                 </Button>
               </Card>
             );
