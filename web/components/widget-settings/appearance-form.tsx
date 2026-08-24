@@ -143,25 +143,6 @@ export function AppearanceForm({ botId }: { botId: string }) {
           </div>
         </Field>
 
-        <Field label="Bubble position" hint="Which corner the widget opens from on your site.">
-          <div className="flex flex-wrap gap-2">
-            {BUBBLE_POSITIONS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => patch({ position: option.value })}
-                className={
-                  form.position === option.value
-                    ? "rounded-xl border border-[var(--accent)] bg-[var(--accent)] px-3 py-1.5 text-sm text-white"
-                    : "rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-1.5 text-sm transition hover:bg-[var(--panel-soft)]"
-                }
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </Field>
-
         <Field label="Avatar URL" hint="Optional. Shown next to the bot's replies.">
           <Input
             type="url"
