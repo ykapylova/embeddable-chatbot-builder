@@ -10,6 +10,7 @@ import { createBot, getBots } from "lib/api-client";
 import { appPaths } from "lib/api-paths";
 import { BOT_NAME_MAX } from "lib/bot-defaults";
 import { queryKeys } from "lib/query-keys";
+import { cn } from "lib/utils";
 import { PlanLimitMessage } from "components/plan/plan-limit-message";
 import { usePlan } from "components/plan/use-plan";
 import { Button } from "components/ui/button";
@@ -41,12 +42,68 @@ function CreditsWarningBanner() {
   );
 }
 
+/**
+ * A downgrade neither deletes nor pauses bots, so an account can sit above its
+ * plan's cap. Both states refuse creation, but only the second is a surprise
+ * the user cannot explain from the screen.
+ */
+type BotLimitState = "at" | "over";
+
+function readBotLimitState(used: number, limit: number): BotLimitState | null {
+  if (used > limit) return "over";
+  if (used === limit) return "at";
+  return null;
+}
+
+function BotLimitNotice({
+  state,
+  used,
+  limit,
+}: {
+  state: BotLimitState;
+  used: number;
+  limit: number;
+}) {
+  // Creation is refused at count >= limit, so getting unblocked means dropping below the cap, not merely down to it.
+  const toDelete = used - limit + 1;
+
+  return (
+    <div
+      className={cn(
+        "mb-6 rounded-2xl px-4 py-3 text-sm",
+        state === "over"
+          ? "border border-[var(--chip-rose-fg)]/30 bg-[var(--chip-rose-bg)] text-[var(--chip-rose-fg)]"
+          : "border border-[var(--border)] text-[var(--muted)]",
+      )}
+    >
+      {state === "over" ? (
+        <>
+          You have {used} bots, but your plan includes {limit}. A downgrade never deletes bots, so
+          they all keep working — creating a new one means deleting {toDelete} of them first.
+        </>
+      ) : (
+        <>
+          Your plan includes {limit} bot{limit === 1 ? "" : "s"}, and you&apos;re at that limit.
+          Delete a bot to create another.
+        </>
+      )}{" "}
+      <Link
+        href={`${appPaths.billing()}?reason=LIMIT_BOTS`}
+        className="underline underline-offset-2"
+      >
+        Upgrade plan
+      </Link>
+    </div>
+  );
+}
+
 export function BotsDashboard() {
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
 
   const bots = useQuery({ queryKey: queryKeys.bots.all, queryFn: getBots });
+  const { plan, isPlanResolved } = usePlan();
 
   const create = useMutation({
     mutationFn: createBot,
@@ -71,6 +128,16 @@ export function BotsDashboard() {
   const pausedCount = botList.length - activeCount;
   const totalSources = botList.reduce((sum, bot) => sum + bot.sourceCount, 0);
 
+  // Until the plan lands the cap is unknown, and a wrong "over limit" is worse
+  // than none. The count comes from the list rather than the plan query so that
+  // deleting a bot corrects the notice immediately instead of after the plan
+  // cache expires — the two are cached separately.
+  const botUsage =
+    isPlanResolved && plan && plan.bots.limit !== null
+      ? { used: botList.length, limit: plan.bots.limit }
+      : null;
+  const botLimitState = botUsage ? readBotLimitState(botUsage.used, botUsage.limit) : null;
+
   return (
     <div className="mx-auto max-w-5xl px-2 py-6 sm:px-4 sm:py-8">
       <CreditsWarningBanner />
@@ -93,11 +160,27 @@ export function BotsDashboard() {
 
       {bots.data && bots.data.length > 0 ? (
         <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatCard tone="amber" label="Bots" value={botList.length} icon={<BotIcon />} />
+          <StatCard
+            tone="amber"
+            label="Bots"
+            value={botList.length}
+            unit={botUsage ? `of ${botUsage.limit}` : undefined}
+            icon={<BotIcon />}
+          >
+            {botLimitState ? (
+              <TagPill tone={botLimitState === "over" ? "rose" : "neutral"} className="self-start">
+                {botLimitState === "over" ? "Over plan limit" : "Plan limit reached"}
+              </TagPill>
+            ) : null}
+          </StatCard>
           <StatCard tone="periwinkle" label="Active" value={activeCount} icon={<Layers />} />
           <StatCard tone="olive" label="Sources" value={totalSources} icon={<FileText />} />
           <StatCard tone="rose" label="Paused" value={pausedCount} icon={<PauseCircle />} />
         </div>
+      ) : null}
+
+      {botUsage && botLimitState ? (
+        <BotLimitNotice state={botLimitState} used={botUsage.used} limit={botUsage.limit} />
       ) : null}
 
       {isCreating ? (
