@@ -9,7 +9,6 @@ import { getBot, updateBot } from "lib/api-client";
 import { appPaths } from "lib/api-paths";
 import {
   BOT_MESSAGE_MAX,
-  BUBBLE_POSITIONS,
   THEME_DEFAULTS,
   THEME_PLACEHOLDER_MAX,
   type BubblePosition,
