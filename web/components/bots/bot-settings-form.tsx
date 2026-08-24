@@ -16,6 +16,7 @@ import {
 import { queryKeys } from "lib/query-keys";
 import { Button } from "components/ui/button";
 import { Input } from "components/ui/input";
+import { TagPill } from "components/ui/tag-pill";
 import { Textarea } from "components/ui/textarea";
 
 type FormState = {
@@ -69,6 +70,15 @@ export function BotSettingsForm({ botId }: { botId: string }) {
     },
   });
 
+  const setStatus = useMutation({
+    mutationFn: (status: "active" | "paused") => updateBot(botId, { status }),
+    onSuccess: async (updated) => {
+      toast.success(updated.status === "paused" ? "Bot paused" : "Bot resumed");
+      queryClient.setQueryData(queryKeys.bots.detail(botId), updated);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.bots.all });
+    },
+  });
+
   const remove = useMutation({
     mutationFn: () => deleteBot(botId),
     onSuccess: async () => {
@@ -78,7 +88,7 @@ export function BotSettingsForm({ botId }: { botId: string }) {
     },
   });
 
-  if (bot.isPending || !form || !base) {
+  if (bot.isPending || !bot.data || !form || !base) {
     return (
       <div className="space-y-4" aria-hidden>
         {[0, 1, 2].map((key) => (
@@ -100,6 +110,8 @@ export function BotSettingsForm({ botId }: { botId: string }) {
       </div>
     );
   }
+
+  const isPaused = bot.data.status === "paused";
 
   const isDirty =
     form.name.trim() !== base.name ||
@@ -203,6 +215,41 @@ export function BotSettingsForm({ botId }: { botId: string }) {
           ) : null}
         </div>
       </form>
+
+      <section className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="text-sm font-medium">Availability</h2>
+          <TagPill tone={isPaused ? "neutral" : "olive"}>{isPaused ? "Paused" : "Active"}</TagPill>
+        </div>
+        <p className="mt-1 text-sm text-[var(--muted)]">
+          {isPaused
+            ? "The widget refuses to open on your site and answers \"This assistant is currently unavailable.\" Your knowledge base and conversations are untouched."
+            : "Pausing takes the bot off your site without deleting anything: the widget refuses to open and answers \"This assistant is currently unavailable.\" You can resume whenever you like."}
+        </p>
+
+        <Button
+          variant="outline"
+          className="mt-3"
+          disabled={setStatus.isPending}
+          onClick={() => setStatus.mutate(isPaused ? "active" : "paused")}
+        >
+          {setStatus.isPending
+            ? isPaused
+              ? "Resuming…"
+              : "Pausing…"
+            : isPaused
+              ? "Resume bot"
+              : "Pause bot"}
+        </Button>
+
+        {setStatus.isError ? (
+          <p className="mt-2 text-sm text-[var(--danger)]">
+            {setStatus.error instanceof Error
+              ? setStatus.error.message
+              : "Could not change availability"}
+          </p>
+        ) : null}
+      </section>
 
       <section className="rounded-2xl border border-[var(--danger-border)] bg-[var(--panel)] p-4">
         <h2 className="text-sm font-medium">Delete this bot</h2>

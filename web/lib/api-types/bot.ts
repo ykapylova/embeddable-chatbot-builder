@@ -39,4 +39,5 @@ export type UpdateBotBody = {
   theme?: BotTheme;
   allowedDomains?: string[];
   brandingEnabled?: boolean;
+  status?: "active" | "paused";
 };

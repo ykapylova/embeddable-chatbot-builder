@@ -82,6 +82,7 @@ export const updateBotSchema = z
     theme: themeSchema.optional(),
     allowedDomains: allowedDomainsSchema.optional(),
     brandingEnabled: z.boolean().optional(),
+    status: z.enum(["active", "paused"]).optional(),
   })
   .refine((patch) => Object.keys(patch).length > 0, { message: "Nothing to update" });
 
