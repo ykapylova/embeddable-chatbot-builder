@@ -11,6 +11,13 @@ const INTERVALS: BillingInterval[] = ["month", "year"];
 const MANAGED_BY = "docsy";
 
 /**
+ * Bump whenever the `features` block below changes. Without it the lookup keys
+ * only on prices, so an account that already has a configuration keeps being
+ * handed the old one and the change appears to do nothing.
+ */
+const REVISION = "2";
+
+/**
  * A Stripe Portal configuration only offers plan switching if it was created
  * with the products to switch between. The default configuration has none, so
  * an account sent to the Portal to upgrade finds nothing there to upgrade with
@@ -66,6 +73,7 @@ async function findManagedConfiguration(
   const match = data.find(
     (configuration) =>
       configuration.metadata?.managed_by === MANAGED_BY &&
+      configuration.metadata?.revision === REVISION &&
       configuration.metadata?.prices === fingerprint,
   );
   return match?.id ?? null;
@@ -73,9 +81,10 @@ async function findManagedConfiguration(
 
 /**
  * Returns the id of a Portal configuration that can switch between our plans,
- * creating it on first use. The price fingerprint is part of the lookup, so
- * changing `STRIPE_PRICE_*` produces a new configuration instead of leaving
- * customers on one that offers prices we no longer sell.
+ * creating it on first use. The price fingerprint and the revision are both part
+ * of the lookup, so changing `STRIPE_PRICE_*` or the features below produces a
+ * new configuration instead of leaving customers on one that offers prices we no
+ * longer sell, or behaves the way we have since stopped wanting.
  */
 export async function ensurePortalConfiguration(): Promise<string | null> {
   const priceIds = collectPriceIds();
@@ -96,16 +105,18 @@ export async function ensurePortalConfiguration(): Promise<string | null> {
 
   const configuration = await stripe.billingPortal.configurations.create({
     business_profile: { headline: "Manage your Docsy subscription" },
-    metadata: { managed_by: MANAGED_BY, prices: fingerprint },
+    metadata: { managed_by: MANAGED_BY, revision: REVISION, prices: fingerprint },
     features: {
       invoice_history: { enabled: true },
       payment_method_update: { enabled: true },
       subscription_update: {
         enabled: true,
         default_allowed_updates: ["price"],
-        // An upgrade should bill the difference now rather than at the next
-        // renewal; Stripe's own credit note handles the downgrade direction.
-        proration_behavior: "create_prorations",
+        // Invoice the difference at the moment of the switch. `create_prorations`
+        // only parks the line items on the next renewal invoice, which reads as
+        // "I upgraded and nothing happened": the old plan appears to continue
+        // and the new one is not paid for until the period turns over.
+        proration_behavior: "always_invoice",
         products,
       },
       // Matches what the cancel screen promises: the plan stays until the end
