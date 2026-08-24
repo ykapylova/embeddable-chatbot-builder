@@ -26,15 +26,15 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/** One citation marker per chunk, so composed answers cite real, checkable sources. */
-function composeAnswer(request: AnswerRequest, citations: ReturnType<typeof citationsFromChunks>): string {
-  const indexBySource = new Map(citations.map((c) => [c.sourceId, c.index]));
-
-  const sentences = request.chunks.map((chunk) => {
-    const marker = indexBySource.get(chunk.sourceId);
-    const snippet = chunk.content.trim().split(/\s+/).slice(0, 16).join(" ");
-    return marker ? `${snippet} [${marker}]` : snippet;
-  });
+/**
+ * Prose composed from the retrieved chunks — no [n] markers, matching the real
+ * provider. A double that still wrote markers would let a regression in the
+ * citation contract pass the tests.
+ */
+function composeAnswer(request: AnswerRequest): string {
+  const sentences = request.chunks.map((chunk) =>
+    chunk.content.trim().split(/\s+/).slice(0, 16).join(" "),
+  );
 
   return `Stub answer for "${request.question}". ${sentences.join(" ")}`;
 }
@@ -74,7 +74,7 @@ export const stubAnswerProvider: AnswerProvider = {
     yield { type: "start", citations };
 
     const pieceDelayMs = mode === "slow" ? 250 : 15;
-    const answer = composeAnswer(request, citations);
+    const answer = composeAnswer(request);
     const pieces = toPieces(answer);
 
     const errorAfterPieces = mode === "error" ? Math.ceil(pieces.length / 2) : -1;

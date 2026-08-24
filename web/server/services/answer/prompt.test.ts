@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { buildContextMessage, buildSystemPrompt, escapeSourceTags, usedCitations } from "./prompt";
+import { buildContextMessage, buildSystemPrompt, escapeSourceTags, isFallbackAnswer } from "./prompt";
 import { citationsFromChunks } from "./types";
 import type { AnswerRequest, RetrievedChunk } from "./types";
 
@@ -77,8 +77,41 @@ test("a chunk carries the citation number of the source it came from", () => {
   assert.ok(message.includes('<SOURCE id="2" title="Two">'));
 });
 
-test("an answer with no marker cites nothing, which is what makes it an abstention", () => {
-  const citations = citationsFromChunks([chunk("Refunds are available within 30 days.")]);
-  assert.deepEqual(usedCitations("I don't have that information.", citations), []);
-  assert.equal(usedCitations("Within 30 days [1].", citations).length, 1);
+test("reproducing the fallback sentence is what makes an answer an abstention", () => {
+  const fallback = "I don't know.";
+  assert.equal(isFallbackAnswer("I don't know.", fallback), true);
+  assert.equal(isFallbackAnswer("Refunds are available within 30 days.", fallback), false);
+});
+
+test("a fallback is still recognised through casing, spacing and punctuation drift", () => {
+  const fallback = "That is not in our documentation.";
+  assert.equal(isFallbackAnswer("that is not in our  documentation", fallback), true);
+  assert.equal(isFallbackAnswer("  That is not in our documentation!  ", fallback), true);
+});
+
+test("an empty answer is an abstention, and never a charged one", () => {
+  assert.equal(isFallbackAnswer("", "I don't know."), true);
+  assert.equal(isFallbackAnswer("   ", "I don't know."), true);
+});
+
+test("an answer is not an abstention just because the bot has no fallback set", () => {
+  assert.equal(isFallbackAnswer("Refunds take 30 days.", ""), false);
+});
+
+test("an answer that merely mentions the fallback still counts as an answer", () => {
+  const fallback = "I don't know.";
+  assert.equal(
+    isFallbackAnswer("I don't know the exact date, but refunds take 30 days.", fallback),
+    false,
+  );
+});
+
+test("the fallback sentence reaches the model, since rule 3 tells it to repeat it", () => {
+  const system = buildSystemPrompt(request([chunk("Refunds are available within 30 days.")]));
+  assert.ok(system.includes("I don't know."));
+});
+
+test("the model is told not to write source markers", () => {
+  const system = buildSystemPrompt(request([chunk("Refunds are available within 30 days.")]));
+  assert.match(system, /Do not write source numbers/);
 });

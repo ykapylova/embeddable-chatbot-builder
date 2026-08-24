@@ -16,11 +16,10 @@ Rules you must follow:
    do not contain the answer — or contain only material that is related to the
    topic but does not actually answer the question — say so plainly. That is a
    correct answer, not a failure. Do not stretch a near-miss into an answer.
-3. Every statement you draw from the sources must carry a bracketed source number,
-   like [1] or [2][3], matching the id on the <SOURCE> element it came from, placed
-   right after the claim it supports. If you are answering at all, you are answering
-   from the sources, so the answer must cite at least one source. An answer with no
-   citation is only ever the "I don't know" answer.
+3. Do not write source numbers, brackets like [1], footnotes or a list of sources.
+   The answer is prose only — the interface shows the visitor where it came from.
+   When the sources do not answer the question, reply with exactly the sentence
+   given to you as the fallback message, on its own, and add nothing to it.
 4. Answer in the same language the question was asked in.
 5. Be direct. Two or three sentences is usually right. Do not restate the question,
    do not open with pleasantries, do not end by offering further help.
@@ -72,6 +71,12 @@ export function buildSystemPrompt(request: AnswerRequest): string {
     sections.push(`About this product:\n${request.botInstruction}`);
   }
 
+  // Rule 3 tells the model to fall back with an exact sentence, so the sentence
+  // has to be in front of it. It is also what `isFallbackAnswer` matches on:
+  // the model reproducing this verbatim is the signal that replaced counting
+  // [n] markers.
+  sections.push(`Fallback message — reply with exactly this and nothing else when the sources do not answer the question:\n${request.fallbackMessage}`);
+
   return sections.join("\n\n");
 }
 
@@ -81,16 +86,30 @@ export function buildContextMessage(chunks: RetrievedChunk[], citations: Citatio
 }
 
 /**
- * Which citations the model actually used. Answers routinely cite a subset of
- * what was retrieved, and showing sources the answer never leaned on makes the
- * citations meaningless.
+ * Whether the model produced the fallback sentence instead of an answer.
+ *
+ * Groundedness used to be "did the answer contain an [n] marker". The widget no
+ * longer shows citations and the prompt no longer asks for markers, so that
+ * test would now call every good answer an abstention — and Content gaps, which
+ * reads `abstained`, would fill up with questions the bot answered well.
+ *
+ * Comparing against the fallback sentence keeps the same meaning without tying
+ * it to the answer's format. Normalised on both sides because a model
+ * reproducing a sentence reliably keeps the words and not the trailing period
+ * or the capitalisation.
  */
-export function usedCitations(answer: string, citations: Citation[]): Citation[] {
-  const used = new Set<number>();
-  for (const match of answer.matchAll(/\[(\d+)\]/g)) {
-    used.add(Number(match[1]));
-  }
+export function isFallbackAnswer(answer: string, fallbackMessage: string): boolean {
+  const normalize = (text: string) =>
+    text
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .replace(/[.!\s]+$/, "")
+      .trim();
 
-  if (used.size === 0) return [];
-  return citations.filter((citation) => used.has(citation.index));
+  const normalizedAnswer = normalize(answer);
+  const normalizedFallback = normalize(fallbackMessage);
+  if (!normalizedAnswer) return true;
+  if (!normalizedFallback) return false;
+
+  return normalizedAnswer === normalizedFallback;
 }

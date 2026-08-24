@@ -4,7 +4,7 @@ import { openAiAnswerProvider } from "./openai-answer.provider";
 import { stubAnswerProvider } from "./stub-answer.provider";
 import type { AnswerProvider } from "./types";
 
-export { escapeSourceTags, usedCitations } from "./prompt";
+export { escapeSourceTags, isFallbackAnswer } from "./prompt";
 export { ANSWER_BUDGET } from "./budget";
 
 /**

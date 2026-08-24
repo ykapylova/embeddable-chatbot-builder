@@ -38,8 +38,8 @@ export function PricingSection({
         <div className="text-center">
           <h2 className="text-2xl font-semibold sm:text-3xl">Simple pricing, no surprises</h2>
           <p className="mx-auto mt-3 max-w-lg text-[var(--muted)]">
-            Every plan includes citations, the honest fallback, and streaming answers — those are
-            never gated.
+            Every plan includes the honest fallback, streaming answers, and source citations on
+            your own screens — those are never gated.
           </p>
         </div>
 
