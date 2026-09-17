@@ -1,5 +1,6 @@
 {
   "framework": "nextjs",
+  "regions": ["dub1"],
   "crons": [
     {
       "path": "/api/billing/grace-sweep",

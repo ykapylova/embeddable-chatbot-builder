@@ -33,7 +33,7 @@ function validateDomain(raw: string, existing: string[]): string | null {
 
 export function DomainListEditor({ botId, domains }: { botId: string; domains: string[] }) {
   const queryClient = useQueryClient();
-  const { plan } = usePlan();
+  const { plan, isPlanResolved } = usePlan();
   const [value, setValue] = useState("");
   const [error, setError] = useState<Error | null>(null);
 
@@ -72,7 +72,8 @@ export function DomainListEditor({ botId, domains }: { botId: string; domains: s
     <div className="mt-3 space-y-3">
       <div className="flex items-center gap-2 text-xs text-[var(--muted)]">
         <span>
-          {domains.length} of {limitLabel} domains used
+          {/* "of ∞" is what an unknown limit would read as, so the cap waits for the plan. */}
+          {isPlanResolved ? `${domains.length} of ${limitLabel} domains used` : `${domains.length} domains used`}
         </span>
         {atLimit ? <ProPill /> : null}
       </div>

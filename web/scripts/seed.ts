@@ -37,7 +37,7 @@ import {
   usageCountersTable,
 } from "server/db/schema";
 import { env } from "server/env";
-import { getPlanUsage } from "server/services/plan.service";
+import { resolvePeriodStart } from "server/services/plan.service";
 import { sourceService } from "server/services/sources/source.service";
 
 import { DEMO_BOT, DEMO_CONVERSATIONS, DEMO_SOURCES, DOCSY_BOT, DOCSY_SOURCES } from "./seed-content";
@@ -325,14 +325,14 @@ async function writeHistory(
  * the billing tables empty is the truth: this account has never paid. Upgrading
  * it through Stripe from the demo is then a real first purchase.
  */
-async function writeUsage(accountId: string, plan: PlanId, credits: number): Promise<void> {
+async function writeUsage(accountId: string, credits: number): Promise<void> {
   const db = getDb();
 
   // Asking the app where the period starts, rather than recomputing it: an
   // account that has paid before still has a subscription row, and its period
   // wins over the rolling one. Guessing wrong writes the counter to a row
   // nothing reads, and the dashboard shows 0 credits used.
-  const { periodStart } = await getPlanUsage(accountId, plan);
+  const periodStart = await resolvePeriodStart(accountId);
 
   await db
     .insert(usageCountersTable)
@@ -374,7 +374,7 @@ async function main() {
 
   // Overriding the counter deliberately desyncs it from the seeded messages, so
   // it is opt-in: it exists to stage the "out of credits" screens on demand.
-  await writeUsage(accountId, options.plan, options.creditsUsed ?? history.credits);
+  await writeUsage(accountId, options.creditsUsed ?? history.credits);
 
   console.log(
     [
