@@ -103,7 +103,7 @@ export function BotsDashboard() {
   const [isCreating, setIsCreating] = useState(false);
 
   const bots = useQuery({ queryKey: queryKeys.bots.all, queryFn: getBots });
-  const { plan, isPlanResolved } = usePlan();
+  const { plan, isPlanResolved, isLoading: isPlanLoading } = usePlan();
 
   const create = useMutation({
     mutationFn: createBot,
@@ -123,7 +123,12 @@ export function BotsDashboard() {
     create.mutate({ name: trimmedName });
   }
 
-  const botList = bots.data ?? [];
+  // The stats and the limit notice need both responses. Painting the list as
+  // soon as bots land and the plan half a second later is what made the page
+  // redraw itself — "3 bots", then "3 of 3", then a limit banner. A failed plan
+  // request does not hold the page: the list renders without the cap.
+  const botsReady = bots.data && !isPlanLoading ? bots.data : undefined;
+  const botList = botsReady ?? [];
   const activeCount = botList.filter((bot) => bot.status !== "paused").length;
   const pausedCount = botList.length - activeCount;
   const totalSources = botList.reduce((sum, bot) => sum + bot.sourceCount, 0);
@@ -150,7 +155,7 @@ export function BotsDashboard() {
           </p>
         </div>
 
-        {!isCreating && bots.data && bots.data.length > 0 ? (
+        {!isCreating && botsReady && botsReady.length > 0 ? (
           <Button onClick={() => setIsCreating(true)}>
             <Plus className="h-4 w-4" />
             New bot
@@ -158,7 +163,7 @@ export function BotsDashboard() {
         ) : null}
       </div>
 
-      {bots.data && bots.data.length > 0 ? (
+      {botsReady && botsReady.length > 0 ? (
         <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <StatCard
             tone="amber"
@@ -227,7 +232,7 @@ export function BotsDashboard() {
         </Card>
       ) : null}
 
-      {bots.isPending ? <BotsSkeleton /> : null}
+      {bots.isPending || (bots.isSuccess && isPlanLoading) ? <BotsSkeleton /> : null}
 
       {bots.isError ? (
         <Card className="border border-[var(--border)] text-center">
@@ -240,7 +245,7 @@ export function BotsDashboard() {
         </Card>
       ) : null}
 
-      {bots.data && bots.data.length === 0 && !isCreating ? (
+      {botsReady && botsReady.length === 0 && !isCreating ? (
         <Card className="border border-dashed border-[var(--border)] p-10 text-center">
           <IconBadge tone="neutral" size="lg" className="mx-auto mb-3">
             <BotIcon />
@@ -256,10 +261,10 @@ export function BotsDashboard() {
         </Card>
       ) : null}
 
-      {bots.data && bots.data.length > 0 ? (
+      {botsReady && botsReady.length > 0 ? (
         <Card className="border border-[var(--border)] p-2">
           <ul className="divide-y divide-[var(--border)]">
-            {bots.data.map((bot) => (
+            {botsReady.map((bot) => (
               <li key={bot.id}>
                 <Link
                   href={appPaths.bot(bot.id)}

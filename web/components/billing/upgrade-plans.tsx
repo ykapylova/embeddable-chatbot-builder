@@ -30,7 +30,7 @@ export function UpgradePlans({ reason }: { reason: UpgradeReason | null }) {
   const router = useRouter();
   const [interval, setInterval] = useState<BillingInterval>("month");
   const [pendingPlan, setPendingPlan] = useState<PaidPlanId | null>(null);
-  const { plan: currentPlan } = usePlan();
+  const { plan: currentPlan, isLoading: isPlanLoading } = usePlan();
 
   const catalogue = useQuery({ queryKey: queryKeys.billing.plans, queryFn: getPlanCatalogue });
 
@@ -98,7 +98,11 @@ export function UpgradePlans({ reason }: { reason: UpgradeReason | null }) {
         </IntervalTab>
       </div>
 
-      {catalogue.isPending ? <PlanCardsSkeleton /> : null}
+      {/* The buttons depend on the current plan: rendering the cards before it
+          lands shows a paying account "Upgrade" on its own plan for a moment.
+          A failed plan request falls through to the cards — the plan summary
+          above already shows that error with a retry. */}
+      {catalogue.isPending || (catalogue.isSuccess && isPlanLoading) ? <PlanCardsSkeleton /> : null}
 
       {catalogue.isError ? (
         <Card className="border border-[var(--border)] text-center">
@@ -111,13 +115,13 @@ export function UpgradePlans({ reason }: { reason: UpgradeReason | null }) {
         </Card>
       ) : null}
 
-      {catalogue.data && catalogue.data.length === 0 ? (
+      {!isPlanLoading && catalogue.data && catalogue.data.length === 0 ? (
         <Card className="border border-dashed border-[var(--border)] text-center text-sm text-[var(--muted)]">
           No plans available right now.
         </Card>
       ) : null}
 
-      {catalogue.data && catalogue.data.length > 0 ? (
+      {!isPlanLoading && catalogue.data && catalogue.data.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-3">
           {catalogue.data.map((p) => {
             const price = interval === "month" ? p.monthlyPrice : p.yearlyPrice;

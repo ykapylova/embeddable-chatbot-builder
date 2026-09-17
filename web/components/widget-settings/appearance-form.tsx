@@ -26,7 +26,7 @@ type FormState = {
 export function AppearanceForm({ botId }: { botId: string }) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { plan } = usePlan();
+  const { plan, isPlanResolved } = usePlan();
   const [draft, setDraft] = useState<Partial<FormState>>({});
 
   const bot = useQuery({
@@ -108,6 +108,8 @@ export function AppearanceForm({ botId }: { botId: string }) {
     save.reset();
   }
 
+  // Locked stays the safe fallback, but it is not shown as a verdict until the
+  // plan lands — a Pro account otherwise sees "requires a Pro plan" flash first.
   const brandingLocked = plan?.branding ?? true;
 
   return (
@@ -161,7 +163,7 @@ export function AppearanceForm({ botId }: { botId: string }) {
         <Field
           label={
             <span className="inline-flex items-center gap-2">
-              &quot;Powered by&quot; badge{brandingLocked ? <ProPill /> : null}
+              &quot;Powered by&quot; badge{isPlanResolved && brandingLocked ? <ProPill /> : null}
             </span>
           }
         >
@@ -169,13 +171,14 @@ export function AppearanceForm({ botId }: { botId: string }) {
             type="button"
             role="switch"
             aria-checked={form.brandingEnabled}
+            disabled={!isPlanResolved}
             onClick={() =>
               brandingLocked
                 ? router.push(`${appPaths.billing()}?reason=FEATURE_BRANDING`)
                 : patch({ brandingEnabled: !form.brandingEnabled })
             }
             className={cn(
-              "relative h-6 w-11 rounded-full transition",
+              "relative h-6 w-11 rounded-full transition disabled:opacity-50",
               form.brandingEnabled ? "bg-[var(--accent)]" : "bg-[var(--border)]",
             )}
           >
@@ -187,7 +190,9 @@ export function AppearanceForm({ botId }: { botId: string }) {
             />
           </button>
           <p className="mt-1.5 text-xs text-[var(--muted)]">
-            {brandingLocked
+            {!isPlanResolved
+              ? "\u00a0"
+              : brandingLocked
               ? "Removing the badge requires a Pro plan."
               : "Off hides \"Powered by Docsy\" from the widget."}
           </p>

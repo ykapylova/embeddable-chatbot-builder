@@ -22,10 +22,8 @@ export async function GET(): Promise<NextResponse> {
   const result = await requireAccount();
   if (unwrapAccount(result)) return result;
 
-  const [usage, subscription] = await Promise.all([
-    getPlanUsage(result.account.id, result.account.plan),
-    subscriptionRepository.findByAccount(result.account.id),
-  ]);
+  const subscription = await subscriptionRepository.findByAccount(result.account.id);
+  const usage = await getPlanUsage(result.account, subscription);
 
   return jsonOk({
     ...usage,

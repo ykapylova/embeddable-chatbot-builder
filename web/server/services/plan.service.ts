@@ -1,8 +1,9 @@
 import type { PlanLimitCode, PlanLimitValue, PlanUsage } from "lib/api-types/plan";
 import { creditCost, planLimits, type ModelId, type PlanId } from "lib/plans";
+import type { AccountRow } from "server/repositories/account.repository";
 import { botRepository } from "server/repositories/bot.repository";
 import { sourceRepository } from "server/repositories/source.repository";
-import { subscriptionRepository } from "server/repositories/subscription.repository";
+import { subscriptionRepository, type SubscriptionRow } from "server/repositories/subscription.repository";
 import { usageRepository } from "server/repositories/usage.repository";
 
 /**
@@ -188,14 +189,17 @@ export function rollingPeriodStart(accountCreatedAt: string, now: Date = new Dat
  * wired (T11); until then, and for accounts that stay on Free forever, the
  * rolling anchor is all there is.
  */
-async function resolvePeriodStart(accountId: string): Promise<string> {
-  const subscription = await subscriptionRepository.findByAccount(accountId);
+function periodStartFor(subscription: SubscriptionRow | null, accountCreatedAt: string | null): string {
   if (subscription?.currentPeriodStart) {
     return subscription.currentPeriodStart.slice(0, 10);
   }
+  return rollingPeriodStart(accountCreatedAt ?? new Date().toISOString());
+}
 
-  const createdAt = await usageRepository.accountCreatedAt(accountId);
-  return rollingPeriodStart(createdAt ?? new Date().toISOString());
+export async function resolvePeriodStart(accountId: string): Promise<string> {
+  const subscription = await subscriptionRepository.findByAccount(accountId);
+  const createdAt = subscription?.currentPeriodStart ? null : await usageRepository.accountCreatedAt(accountId);
+  return periodStartFor(subscription, createdAt);
 }
 
 /**
@@ -222,10 +226,16 @@ export async function refundForAnswer(accountId: string, model: ModelId): Promis
   await usageRepository.refundCredits(accountId, periodStart, cost);
 }
 
-/** Powers `GET /api/me/plan` — the one source the client reads for limits, usage and gated features. */
-export async function getPlanUsage(accountId: string, plan: PlanId): Promise<PlanUsage> {
+/**
+ * Powers `GET /api/me/plan` — the one source the client reads for limits, usage and gated features.
+ * The caller already holds the account and its subscription, so both are taken
+ * rather than re-read: every query here is a round trip on the dashboard's
+ * first paint.
+ */
+export async function getPlanUsage(account: AccountRow, subscription: SubscriptionRow | null): Promise<PlanUsage> {
+  const { id: accountId, plan } = account;
   const limits = planLimits(plan);
-  const periodStart = await resolvePeriodStart(accountId);
+  const periodStart = periodStartFor(subscription, account.createdAt);
   const [usage, botsUsed] = await Promise.all([
     usageRepository.find(accountId, periodStart),
     botRepository.countByAccount(accountId),
