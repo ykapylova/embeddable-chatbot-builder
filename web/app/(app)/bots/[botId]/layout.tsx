@@ -1,6 +1,7 @@
 import { BotDataPrefetch } from "components/bots/bot-data-prefetch";
 import { BotHeader } from "components/bots/bot-header";
 import { BotNav } from "components/bots/bot-nav";
+import { PageTransition } from "components/providers/page-transition";
 
 export default async function BotLayout({
   children,
@@ -16,7 +17,9 @@ export default async function BotLayout({
       <BotDataPrefetch botId={botId} />
       <BotHeader botId={botId} />
       <BotNav botId={botId} />
-      <div className="pt-6">{children}</div>
+      <div className="pt-6">
+        <PageTransition scope="bot-tab">{children}</PageTransition>
+      </div>
     </div>
   );
 }
