@@ -3,6 +3,7 @@
 import { useSearchParams } from "next/navigation";
 
 import { CancelSubscriptionScreen } from "components/billing/cancel-subscription-screen";
+import { parseCheckoutIntent } from "components/billing/checkout-intent";
 import { CheckoutCancelled, CheckoutReturn } from "components/billing/checkout-return";
 import { ManageSubscription } from "components/billing/manage-subscription";
 import { PlanSummary } from "components/billing/plan-summary";
@@ -22,6 +23,7 @@ export function BillingPage() {
   const sessionId = searchParams.get("session_id");
   const view = searchParams.get("view");
   const reason = parseUpgradeReason(searchParams.get("reason"));
+  const intent = parseCheckoutIntent(searchParams.get("checkout"), searchParams.get("interval"));
 
   if (view === "cancel") {
     return (
@@ -45,7 +47,7 @@ export function BillingPage() {
       <div className="space-y-6">
         <PlanSummary />
         <ManageSubscription />
-        <UpgradePlans reason={reason} />
+        <UpgradePlans reason={reason} intent={intent} />
       </div>
     </div>
   );

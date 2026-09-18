@@ -6,6 +6,7 @@ import { Check } from "lucide-react";
 
 import { Button } from "components/ui/button";
 import { Input } from "components/ui/input";
+import { appPaths } from "lib/api-paths";
 import { cn } from "lib/utils";
 import {
   planLimits,
@@ -113,9 +114,13 @@ export function PricingSection({
                   billed ${plan.yearlyPrice}/year
                 </p>
 
-                <Link href={signedIn ? "/dashboard" : "/sign-up"} className="mt-6">
+                <Link href={planHref(plan, billingInterval, signedIn)} className="mt-6">
                   <Button className="w-full" variant={plan.recommended ? "default" : "outline"}>
-                    {signedIn ? "Go to dashboard" : plan.monthlyPrice === 0 ? "Start free" : "Choose " + plan.name}
+                    {plan.id === "free"
+                      ? signedIn
+                        ? "Go to dashboard"
+                        : "Start free"
+                      : "Choose " + plan.name}
                   </Button>
                 </Link>
 
@@ -163,4 +168,15 @@ export function PricingSection({
       </div>
     </section>
   );
+}
+
+/**
+ * A paid plan goes straight to Stripe Checkout for the plan and interval on
+ * screen; a signed-out visitor makes the detour through sign-up, and Clerk's
+ * `redirect_url` brings them back to the same checkout afterwards.
+ */
+function planHref(plan: PlanPresentation, interval: BillingInterval, signedIn: boolean): string {
+  if (plan.id === "free") return signedIn ? appPaths.dashboard() : "/sign-up";
+  const checkout = appPaths.billingCheckout(plan.id, interval);
+  return signedIn ? checkout : `/sign-up?redirect_url=${encodeURIComponent(checkout)}`;
 }
