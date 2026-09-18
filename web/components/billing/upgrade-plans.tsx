@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -13,12 +13,11 @@ import { yearlySavingPercent } from "lib/plans";
 import { queryKeys } from "lib/query-keys";
 import { cn } from "lib/utils";
 import { usePlan } from "components/plan/use-plan";
+import type { CheckoutIntent, PaidPlanId } from "components/billing/checkout-intent";
 import { REASON_COPY, type UpgradeReason } from "components/billing/upgrade-reason";
 import { Button } from "components/ui/button";
 import { Card } from "components/ui/card";
 import { TagPill } from "components/ui/tag-pill";
-
-type PaidPlanId = Extract<PlanId, "pro" | "business">;
 
 /**
  * Plan cards read entirely from `GET /api/plans` — no price or limit is
@@ -26,10 +25,15 @@ type PaidPlanId = Extract<PlanId, "pro" | "business">;
  * upgrade triggers from §10.3 land, with the reason that brought the
  * visitor highlighted instead of a generic price table.
  */
-export function UpgradePlans({ reason }: { reason: UpgradeReason | null }) {
+export function UpgradePlans({
+  reason,
+  intent,
+}: {
+  reason: UpgradeReason | null;
+  intent: CheckoutIntent | null;
+}) {
   const router = useRouter();
-  const [interval, setInterval] = useState<BillingInterval>("month");
-  const [pendingPlan, setPendingPlan] = useState<PaidPlanId | null>(null);
+  const [interval, setInterval] = useState<BillingInterval>(intent?.interval ?? "month");
   const { plan: currentPlan, isLoading: isPlanLoading } = usePlan();
 
   const catalogue = useQuery({ queryKey: queryKeys.billing.plans, queryFn: getPlanCatalogue });
@@ -74,9 +78,24 @@ export function UpgradePlans({ reason }: { reason: UpgradeReason | null }) {
       portal.mutate({ flow: "update" });
       return;
     }
-    setPendingPlan(planId as PaidPlanId);
     checkout.mutate({ plan: planId as PaidPlanId, interval });
   }
+
+  // A plan chosen on the landing page goes straight to Stripe once we know the
+  // account may use Checkout. A subscriber, or someone already on that plan,
+  // just sees the cards: opening the Portal unasked would be a surprise.
+  // The intent is dropped from the URL first, so coming back from Stripe with
+  // the browser's Back button does not bounce the visitor there again.
+  const intentHandled = useRef(false);
+  useEffect(() => {
+    if (!intent || intentHandled.current || isPlanLoading || !currentPlan) return;
+    intentHandled.current = true;
+    router.replace(appPaths.billing(), { scroll: false });
+    if (isSubscriber || currentPlan.plan === intent.plan) return;
+    checkout.mutate(intent);
+  }, [intent, isPlanLoading, currentPlan, isSubscriber, router, checkout]);
+
+  const pendingPlan = checkout.isPending ? checkout.variables?.plan : null;
 
   const isExistingSubscriberError = checkout.error instanceof ApiError && checkout.error.status === 409;
 
@@ -130,7 +149,7 @@ export function UpgradePlans({ reason }: { reason: UpgradeReason | null }) {
             const saving = yearlySavingPercent(p);
             const isRedirecting = isSubscriber
               ? portal.isPending
-              : checkout.isPending && pendingPlan === p.id;
+              : pendingPlan === p.id;
 
             return (
               <Card

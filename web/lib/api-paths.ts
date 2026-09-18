@@ -28,6 +28,9 @@ export const apiPaths = {
 export const appPaths = {
   dashboard: () => "/dashboard",
   billing: () => "/billing",
+  /** Lands on Billing and opens Stripe Checkout for that plan straight away. */
+  billingCheckout: (plan: "pro" | "business", interval: "month" | "year") =>
+    `/billing?checkout=${plan}&interval=${interval}`,
   bot: (botId: string) => `/bots/${botId}`,
   botSettings: (botId: string) => `/bots/${botId}/settings`,
   botKnowledge: (botId: string) => `/bots/${botId}/knowledge`,
