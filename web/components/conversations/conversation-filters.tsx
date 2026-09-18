@@ -60,12 +60,8 @@ export function ConversationFilters({
       >
         Rated 👎
       </FilterPill>
-      <FilterPill
-        active={!!filter.unresolved}
-        onClick={() => onChange({ ...filter, unresolved: !filter.unresolved })}
-      >
-        Unresolved
-      </FilterPill>
+      {/* No "Unresolved" pill until the chat path writes `conversations.unresolved` —
+          today only the seed sets it, so the filter was always empty on real data. */}
     </div>
   );
 }
