@@ -38,6 +38,11 @@ export function BotNav({ botId }: { botId: string }) {
           <Link
             key={tab.href}
             href={tab.href}
+            // The default prefetch of a dynamic route stops at its loading
+            // boundary, so the first visit to each tab still waited on the
+            // server behind a skeleton. The tab pages are thin shells over
+            // client data, which makes prefetching them whole cheap.
+            prefetch
             ref={isActive ? activeTabRef : undefined}
             aria-current={isActive ? "page" : undefined}
             className={cn(
